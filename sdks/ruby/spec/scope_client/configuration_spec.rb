@@ -4,13 +4,22 @@ RSpec.describe ScopeClient::Configuration do
   subject(:config) { described_class.new }
 
   describe '#initialize' do
-    it 'sets default values' do
+    it 'sets default base_url and api_version' do
       expect(config.base_url).to eq('https://api.scope.io')
       expect(config.api_version).to eq('v1')
+    end
+
+    it 'sets default timeout values' do
       expect(config.timeout).to eq(30)
       expect(config.open_timeout).to eq(10)
+    end
+
+    it 'sets default cache settings' do
       expect(config.cache_enabled).to be(true)
       expect(config.cache_ttl).to eq(300)
+    end
+
+    it 'sets default retry and telemetry settings' do
       expect(config.max_retries).to eq(3)
       expect(config.telemetry_enabled).to be(true)
     end

@@ -6,6 +6,14 @@ require 'json'
 
 module ScopeClient
   class Connection
+    STATUS_ERROR_MAP = {
+      401 => AuthenticationError,
+      403 => AuthorizationError,
+      404 => NotFoundError,
+      409 => ConflictError,
+      429 => RateLimitError
+    }.freeze
+
     attr_reader :config
 
     def initialize(config)
@@ -73,52 +81,25 @@ module ScopeClient
     end
 
     def handle_response(response)
-      case response.status
-      when 200..299
-        response.body
-      when 401
-        raise AuthenticationError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      when 403
-        raise AuthorizationError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      when 404
-        raise NotFoundError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      when 409
-        raise ConflictError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      when 429
-        raise RateLimitError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      when 500..599
-        raise ServerError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      else
-        raise ApiError.new(
-          error_message(response),
-          http_status: response.status,
-          http_body: response.body
-        )
-      end
+      return response.body if response.status.between?(200, 299)
+
+      raise_error_for_status(response)
+    end
+
+    def raise_error_for_status(response)
+      error_class = error_class_for_status(response.status)
+      raise error_class.new(
+        error_message(response),
+        http_status: response.status,
+        http_body: response.body
+      )
+    end
+
+    def error_class_for_status(status)
+      return STATUS_ERROR_MAP[status] if STATUS_ERROR_MAP.key?(status)
+      return ServerError if status >= 500
+
+      ApiError
     end
 
     def error_message(response)

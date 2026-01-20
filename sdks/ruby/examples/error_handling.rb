@@ -46,13 +46,13 @@ puts
 puts '3. Handling MissingVariableError...'
 begin
   # Simulate a prompt with variables
-  version = ScopeClient::Resources::PromptVersion.new({
-                                                        'prompt_id' => 'test',
-                                                        'version_id' => 'v1',
-                                                        'content' => 'Hello {{name}}, your order {{order_id}} is ready!',
-                                                        'variables' => %w[name order_id],
-                                                        'status' => 'published'
-                                                      })
+  version = ScopeClient::Resources::PromptVersion.new(
+    'prompt_id' => 'test',
+    'version_id' => 'v1',
+    'content' => 'Hello {{name}}, your order {{order_id}} is ready!',
+    'variables' => %w[name order_id],
+    'status' => 'published'
+  )
 
   # This will raise MissingVariableError because order_id is missing
   version.render({ name: 'Alice' })
@@ -64,13 +64,13 @@ puts
 # Example 4: Handling validation errors
 puts '4. Handling ValidationError...'
 begin
-  version = ScopeClient::Resources::PromptVersion.new({
-                                                        'prompt_id' => 'test',
-                                                        'version_id' => 'v1',
-                                                        'content' => 'Hello {{name}}!',
-                                                        'variables' => ['name'],
-                                                        'status' => 'published'
-                                                      })
+  version = ScopeClient::Resources::PromptVersion.new(
+    'prompt_id' => 'test',
+    'version_id' => 'v1',
+    'content' => 'Hello {{name}}!',
+    'variables' => ['name'],
+    'status' => 'published'
+  )
 
   # This will raise ValidationError because 'unknown' is not a declared variable
   version.render({ name: 'Alice', unknown: 'value' })

@@ -15,7 +15,7 @@ module ScopeClient
         @client.get_prompt_version(prompt_id, version_id)
       end
 
-      def has_production_version?
+      def production_version?
         !production_version_number.nil?
       end
 

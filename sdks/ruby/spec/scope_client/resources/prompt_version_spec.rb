@@ -17,11 +17,17 @@ RSpec.describe ScopeClient::Resources::PromptVersion do
   end
 
   describe 'accessors' do
-    it 'provides access to data via methods' do
+    it 'provides access to prompt_id and version_id' do
       expect(prompt_version.prompt_id).to eq('prompt_123')
       expect(prompt_version.version_id).to eq('ver_456')
+    end
+
+    it 'provides access to version number and content' do
       expect(prompt_version.version).to eq(2)
       expect(prompt_version.content).to eq('Hello {{name}}, your balance is {{balance}}')
+    end
+
+    it 'provides access to variables and status' do
       expect(prompt_version.variables).to eq(%w[name balance])
       expect(prompt_version.status).to eq('published')
     end
