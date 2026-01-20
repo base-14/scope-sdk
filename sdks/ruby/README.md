@@ -1,6 +1,6 @@
 # Scope Client Ruby SDK
 
-Official Ruby SDK for the [Scope Prompt Management Platform](https://scope.io).
+Official Ruby SDK for the [Scope Platform](https://scope.play.base14.io/).
 
 [![Gem Version](https://badge.fury.io/rb/scope-client.svg)](https://rubygems.org/gems/scope-client)
 [![CI](https://github.com/base14/scope-sdk/actions/workflows/scope-ruby-sdk-ci.yml/badge.svg)](https://github.com/base14/scope-sdk/actions)
@@ -66,7 +66,7 @@ client = ScopeClient.client(
 ```ruby
 ScopeClient.configure do |config|
   config.api_key = 'your_api_key'
-  config.base_url = 'https://api.scope.io'
+  config.base_url = 'https://scope-api.play.base14.io/'
   config.timeout = 30
   config.cache_enabled = true
   config.cache_ttl = 300

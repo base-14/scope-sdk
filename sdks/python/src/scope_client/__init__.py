@@ -1,6 +1,6 @@
 """Scope Client SDK for Python.
 
-A Python SDK for the Scope Prompt Management Platform, providing
+A Python SDK for the Scope Platform, providing
 easy access to prompts, versions, and template rendering.
 
 Example:

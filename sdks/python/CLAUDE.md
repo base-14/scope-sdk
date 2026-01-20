@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is the Python SDK for the Scope Prompt Management Platform. It provides a client library for interacting with the Scope API to manage prompts, versions, and render templates.
+This is the Python SDK for the Scope Platform. It provides a client library for interacting with the Scope API to manage prompts, versions, and render templates.
 
 ## Quick Commands
 

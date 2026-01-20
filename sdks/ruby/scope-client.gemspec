@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Base14"]
   spec.email         = ["support@base14.io"]
 
-  spec.summary       = "Ruby SDK for Scope Prompt Management Platform"
+  spec.summary       = "Ruby SDK for Scope Platform"
   spec.description   = "Read-only Ruby client for managing and rendering prompts from the Scope platform"
   spec.homepage      = "https://github.com/base14/scope-sdk"
   spec.license       = "BSD-3-Clause"

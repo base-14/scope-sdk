@@ -1,6 +1,6 @@
 # Scope Client Python SDK
 
-Official Python SDK for the [Scope Prompt Management Platform](https://scope.io).
+Official Python SDK for the [Scope Platform](https://scope.play.base14.io/).
 
 ## Installation
 
@@ -71,7 +71,7 @@ client = ScopeClient(config)
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `api_key` | str | None | Your Scope API key (required) |
-| `base_url` | str | `https://api.scope.io` | API base URL |
+| `base_url` | str | `https://scope-api.play.base14.io/` | API base URL |
 | `api_version` | str | `v1` | API version |
 | `timeout` | int | 30 | Request timeout in seconds |
 | `open_timeout` | int | 10 | Connection timeout in seconds |
@@ -258,10 +258,4 @@ make format
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Support
-
-- Documentation: https://docs.scope.io/sdks/python
-- Issues: https://github.com/scope-io/scope-sdk/issues
-- Email: support@scope.io
+BSD-3-Clause. See [LICENSE](../../LICENSE).

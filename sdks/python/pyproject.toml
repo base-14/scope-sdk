@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "scope-client"
 dynamic = ["version"]
-description = "Python SDK for Scope Prompt Management Platform"
+description = "Python SDK for Scope Platform"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"

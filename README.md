@@ -1,6 +1,6 @@
 # Scope SDK
 
-Official SDK clients for the [Scope Prompt Management Platform](https://scope.io).
+Official SDK clients for the [Scope Platform](https://scope.play.base14.io/).
 
 ## Available SDKs
 
@@ -13,7 +13,7 @@ Official SDK clients for the [Scope Prompt Management Platform](https://scope.io
 
 ## Overview
 
-Scope SDKs provide read-only access to the Scope Prompt Management Platform, enabling you to:
+Scope SDKs provide read-only access to the Scope Platform, enabling you to:
 
 - Fetch production and draft prompts
 - Render prompts with variable substitution
@@ -77,7 +77,7 @@ Generate API keys from the Scope UI under Settings > Applications.
 
 - [Ruby SDK Documentation](./sdks/ruby/README.md)
 - [Python SDK Documentation](./sdks/python/README.md)
-- [API Reference](https://docs.scope.io/api)
+- [API Reference](https://docs.base14.io/scope)
 
 ## License
 
