@@ -37,3 +37,18 @@ RSpec/ExampleLength:
 
 RSpec/NestedGroups:
   Max: 4
+
+# Disable Capybara/FactoryBot/Rails cops - not used in this project
+# These cops have moved from RSpec/* to their own namespaces and cause internal errors
+# See: https://github.com/rubocop/rubocop-rspec/issues
+Capybara:
+  Enabled: false
+
+Capybara/RSpec:
+  Enabled: false
+
+FactoryBot:
+  Enabled: false
+
+RSpecRails:
+  Enabled: false
