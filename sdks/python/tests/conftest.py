@@ -1,7 +1,8 @@
 """Shared test fixtures for scope-client tests."""
 
 import os
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
