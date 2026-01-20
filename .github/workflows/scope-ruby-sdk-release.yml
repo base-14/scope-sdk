@@ -1,0 +1,46 @@
+name: Scope Ruby SDK Release
+
+on:
+  push:
+    tags:
+      - "ruby-v*"
+
+jobs:
+  release:
+    name: Release to RubyGems
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./sdks/ruby
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: ./sdks/ruby
+
+      - name: Run Tests
+        run: make test
+
+      - name: Build gem
+        run: make build
+
+      - name: Publish to RubyGems
+        run: |
+          mkdir -p ~/.gem
+          echo -e "---\n:rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}" > ~/.gem/credentials
+          chmod 0600 ~/.gem/credentials
+          gem push *.gem
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: sdks/ruby/*.gem
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

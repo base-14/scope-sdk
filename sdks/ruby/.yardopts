@@ -1,0 +1,7 @@
+--markup markdown
+--output-dir doc
+--readme README.md
+--title 'Scope Client Ruby SDK'
+lib/**/*.rb
+- LICENSE
+- CHANGELOG.md
