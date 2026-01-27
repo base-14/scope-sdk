@@ -24,9 +24,11 @@ gem install scope-client
 ```ruby
 require 'scope_client'
 
-# Configure globally (optional - can also use SCOPE_API_KEY env var)
+# Configure globally (or use environment variables)
 ScopeClient.configure do |config|
-  config.api_key = 'your_api_key'
+  config.org_id = 'my-org'
+  config.api_key = 'key_abc123'
+  config.api_secret = 'secret_xyz'
 end
 
 # Create a client
@@ -45,15 +47,21 @@ puts rendered
 
 ### Environment Variables
 
-- `SCOPE_API_KEY` - Your Scope API key (required)
+- `SCOPE_ORG_ID` - Your organization identifier (required)
+- `SCOPE_API_KEY` - Your API key ID (required)
+- `SCOPE_API_SECRET` - Your API key secret (required)
 - `SCOPE_API_URL` - Custom API base URL (optional)
+- `SCOPE_AUTH_API_URL` - Auth API URL for token exchange (optional)
 - `SCOPE_ENVIRONMENT` - Environment name (optional)
+- `SCOPE_TOKEN_REFRESH_BUFFER` - Seconds before token expiry to refresh (optional)
 
 ### Client Options
 
 ```ruby
 client = ScopeClient.client(
-  api_key: 'override_key',     # Override global API key
+  org_id: 'my-org',            # Organization identifier
+  api_key: 'key_abc123',       # API key ID
+  api_secret: 'secret_xyz',    # API key secret
   timeout: 60,                  # Request timeout (seconds)
   cache_enabled: true,          # Enable response caching
   cache_ttl: 300,              # Cache TTL (seconds)
@@ -65,13 +73,17 @@ client = ScopeClient.client(
 
 ```ruby
 ScopeClient.configure do |config|
-  config.api_key = 'your_api_key'
-  config.base_url = 'https://scope-api.play.base14.io/'
+  config.org_id = 'my-org'
+  config.api_key = 'key_abc123'
+  config.api_secret = 'secret_xyz'
+  config.base_url = 'https://api.scope.io'
+  config.auth_api_url = 'https://auth.scope.io'
   config.timeout = 30
   config.cache_enabled = true
   config.cache_ttl = 300
   config.max_retries = 3
   config.telemetry_enabled = true
+  config.token_refresh_buffer = 60
 end
 ```
 
@@ -141,8 +153,12 @@ prompt.archived?             # true if archived
 ```ruby
 begin
   prompt = client.get_prompt_production('prompt-id')
+rescue ScopeClient::InvalidCredentialsError
+  # Invalid org_id, api_key, or api_secret
+rescue ScopeClient::TokenRefreshError
+  # Failed to refresh JWT token
 rescue ScopeClient::AuthenticationError
-  # Invalid API key
+  # Authentication failed
 rescue ScopeClient::AuthorizationError
   # Insufficient permissions
 rescue ScopeClient::NotFoundError
@@ -206,6 +222,7 @@ ScopeClient::Middleware::Telemetry.on_error = ->(data) {
 require 'scope_client'
 require 'openai'
 
+# Credentials loaded from SCOPE_ORG_ID, SCOPE_API_KEY, SCOPE_API_SECRET env vars
 scope = ScopeClient.client
 openai = OpenAI::Client.new
 
@@ -231,6 +248,7 @@ response = openai.chat(
 require 'scope_client'
 require 'anthropic'
 
+# Credentials loaded from SCOPE_ORG_ID, SCOPE_API_KEY, SCOPE_API_SECRET env vars
 scope = ScopeClient.client
 anthropic = Anthropic::Client.new
 

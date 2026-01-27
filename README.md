@@ -31,9 +31,11 @@ gem install scope-client
 ```ruby
 require 'scope_client'
 
-# Configure with API key
+# Configure with credentials
 ScopeClient.configure do |config|
+  config.org_id = ENV['SCOPE_ORG_ID']
   config.api_key = ENV['SCOPE_API_KEY']
+  config.api_secret = ENV['SCOPE_API_SECRET']
 end
 
 # Fetch and render a prompt
@@ -53,8 +55,12 @@ pip install scope-client
 ```python
 import scope_client
 
-# Configure with API key
-scope_client.configure(api_key="sk_your_api_key")
+# Configure with credentials
+scope_client.configure(
+    org_id="my-org",
+    api_key="key_abc123",
+    api_secret="secret_xyz"
+)
 
 # Fetch and render a prompt
 client = scope_client.client()
@@ -66,10 +72,15 @@ rendered = client.render_prompt('my-prompt', {
 
 ## Authentication
 
-All SDKs support authentication via:
+All SDKs use JWT-based authentication. Credentials are exchanged for a JWT token which is automatically managed and refreshed by the SDK.
 
-1. **Environment variable** (recommended): Set `SCOPE_API_KEY`
-2. **Direct configuration**: Pass API key during client initialization
+Authentication requires three credentials:
+
+1. **Organization ID** (`SCOPE_ORG_ID`): Your organization identifier
+2. **API Key** (`SCOPE_API_KEY`): Your API key ID
+3. **API Secret** (`SCOPE_API_SECRET`): Your API key secret
+
+These can be set via environment variables (recommended) or passed directly during configuration.
 
 Generate API keys from the Scope UI under Settings > Applications.
 

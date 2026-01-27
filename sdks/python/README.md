@@ -10,15 +10,19 @@ pip install scope-client
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+
 
 ## Quick Start
 
 ```python
 import scope_client
 
-# Configure with your API key
-scope_client.configure(api_key="sk_your_api_key")
+# Configure with your credentials
+scope_client.configure(
+    org_id="my-org",
+    api_key="key_abc123",
+    api_secret="secret_xyz"
+)
 
 # Create a client
 client = scope_client.client()
@@ -36,9 +40,13 @@ print(rendered)  # "Hello, Alice!"
 The SDK automatically reads from environment variables:
 
 ```bash
-export SCOPE_API_KEY="sk_your_api_key"
-export SCOPE_API_URL="https://api.scope.io"  # Optional
-export SCOPE_ENVIRONMENT="production"         # Optional
+export SCOPE_ORG_ID="my-org"
+export SCOPE_API_KEY="key_abc123"
+export SCOPE_API_SECRET="secret_xyz"
+export SCOPE_API_URL="https://api.scope.io"       # Optional
+export SCOPE_AUTH_API_URL="https://auth.scope.io" # Optional
+export SCOPE_ENVIRONMENT="production"              # Optional
+export SCOPE_TOKEN_REFRESH_BUFFER="60"             # Optional
 ```
 
 ### Programmatic Configuration
@@ -48,7 +56,9 @@ import scope_client
 
 # Global configuration
 scope_client.configure(
-    api_key="sk_your_api_key",
+    org_id="my-org",
+    api_key="key_abc123",
+    api_secret="secret_xyz",
     base_url="https://api.scope.io",
     cache_enabled=True,
     cache_ttl=300,  # 5 minutes
@@ -60,7 +70,9 @@ scope_client.configure(
 from scope_client import Configuration, ScopeClient
 
 config = Configuration(
-    api_key="sk_your_api_key",
+    org_id="my-org",
+    api_key="key_abc123",
+    api_secret="secret_xyz",
     cache_enabled=False,
 )
 client = ScopeClient(config)
@@ -70,8 +82,11 @@ client = ScopeClient(config)
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `api_key` | str | None | Your Scope API key (required) |
-| `base_url` | str | `https://scope-api.play.base14.io/` | API base URL |
+| `org_id` | str | None | Organization identifier (required) |
+| `api_key` | str | None | API key ID (required) |
+| `api_secret` | str | None | API key secret (required) |
+| `base_url` | str | `https://api.scope.io` | API base URL |
+| `auth_api_url` | str | `https://auth.scope.io` | Auth API URL for token exchange |
 | `api_version` | str | `v1` | API version |
 | `timeout` | int | 30 | Request timeout in seconds |
 | `open_timeout` | int | 10 | Connection timeout in seconds |
@@ -82,6 +97,7 @@ client = ScopeClient(config)
 | `retry_max_delay` | float | 30.0 | Maximum delay between retries |
 | `telemetry_enabled` | bool | True | Enable telemetry hooks |
 | `environment` | str | `production` | Environment name |
+| `token_refresh_buffer` | int | 60 | Seconds before token expiry to refresh |
 
 ## Usage
 
@@ -160,6 +176,8 @@ client.clear_cache()
 from scope_client import (
     ScopeError,
     AuthenticationError,
+    InvalidCredentialsError,
+    TokenRefreshError,
     NotFoundError,
     NoProductionVersionError,
     MissingVariableError,
@@ -169,8 +187,12 @@ from scope_client import (
 try:
     version = client.get_prompt_production("my-prompt")
     rendered = version.render({"name": "Alice"})
+except InvalidCredentialsError:
+    print("Invalid credentials (org_id, api_key, or api_secret)")
+except TokenRefreshError:
+    print("Failed to refresh JWT token")
 except AuthenticationError:
-    print("Invalid API key")
+    print("Authentication failed")
 except NotFoundError:
     print("Prompt not found")
 except NoProductionVersionError as e:
@@ -230,6 +252,8 @@ with scope_client.client() as client:
 | `ServerError` | Server error (5xx) |
 | `ConnectionError` | Network connection failure |
 | `TimeoutError` | Request timeout |
+| `TokenRefreshError` | JWT token refresh failed |
+| `InvalidCredentialsError` | Invalid org_id, api_key, or api_secret |
 | `ResourceError` | Base class for resource errors |
 | `ValidationError` | Validation failure |
 | `RenderError` | Template rendering failure |
