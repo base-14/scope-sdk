@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 RSpec.describe ScopeClient::TokenManager do
+  subject(:token_manager) { described_class.new(config) }
+
   let(:config) do
     ScopeClient::Configuration.new(
       org_id: 'test_org',
@@ -10,8 +12,6 @@ RSpec.describe ScopeClient::TokenManager do
       token_refresh_buffer: 60
     )
   end
-
-  subject(:token_manager) { described_class.new(config) }
 
   describe '#access_token' do
     context 'when no token is cached' do

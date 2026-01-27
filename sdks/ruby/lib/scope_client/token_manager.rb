@@ -57,23 +57,28 @@ module ScopeClient
     def handle_token_response(response)
       case response.status
       when 200
-        data = JSON.parse(response.body)
-        @token = data['access_token']
-        expires_in = data['expires_in'] || 300
-        @expires_at = Time.now + expires_in
+        parse_success_response(response.body)
       when 401
         raise InvalidCredentialsError, 'Invalid SDK credentials'
       when 403
         raise InvalidCredentialsError, 'SDK credentials are not authorized'
       else
-        body = begin
-          JSON.parse(response.body)
-        rescue StandardError
-          { 'message' => response.body }
-        end
-        message = body['message'] || body['error'] || "Token refresh failed (HTTP #{response.status})"
-        raise TokenRefreshError, message
+        raise TokenRefreshError, extract_error_message(response)
       end
+    end
+
+    def parse_success_response(body)
+      data = JSON.parse(body)
+      @token = data['access_token']
+      expires_in = data['expires_in'] || 300
+      @expires_at = Time.now + expires_in
+    end
+
+    def extract_error_message(response)
+      body = JSON.parse(response.body)
+      body['message'] || body['error'] || "Token refresh failed (HTTP #{response.status})"
+    rescue StandardError
+      "Token refresh failed (HTTP #{response.status})"
     end
 
     def auth_connection

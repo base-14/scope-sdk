@@ -74,9 +74,7 @@ class TokenManager:
         """
         if self._token_info is None:
             return True
-        return time.time() >= (
-            self._token_info.expires_at - self._config.token_refresh_buffer
-        )
+        return time.time() >= (self._token_info.expires_at - self._config.token_refresh_buffer)
 
     def _fetch_token(self) -> None:
         """Fetch a new token from the auth API.
@@ -110,13 +108,9 @@ class TokenManager:
                 self._handle_token_response(response)
 
         except httpx.ConnectError as e:
-            raise TokenRefreshError(
-                message=f"Failed to connect to auth API: {e}"
-            ) from e
+            raise TokenRefreshError(message=f"Failed to connect to auth API: {e}") from e
         except httpx.TimeoutException as e:
-            raise TokenRefreshError(
-                message=f"Auth API request timed out: {e}"
-            ) from e
+            raise TokenRefreshError(message=f"Auth API request timed out: {e}") from e
 
     def _handle_token_response(self, response: httpx.Response) -> None:
         """Handle the token response from the auth API.
@@ -139,9 +133,7 @@ class TokenManager:
         elif response.status_code == 401:
             raise InvalidCredentialsError(message="Invalid SDK credentials")
         elif response.status_code == 403:
-            raise InvalidCredentialsError(
-                message="SDK credentials are not authorized"
-            )
+            raise InvalidCredentialsError(message="SDK credentials are not authorized")
         else:
             try:
                 data = response.json()

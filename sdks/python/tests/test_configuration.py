@@ -5,7 +5,7 @@ import os
 import pytest
 
 from scope_client.configuration import Configuration, ConfigurationManager
-from scope_client.errors import ConfigurationError, MissingApiKeyError
+from scope_client.errors import ConfigurationError
 
 
 class TestConfiguration:

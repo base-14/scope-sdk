@@ -220,9 +220,7 @@ class TestTokenManagerHTTP:
         with pytest.raises(TokenRefreshError, match="timed out"):
             token_manager._fetch_token()
 
-    def test_fetch_token_sends_correct_payload(
-        self, auth_config: Configuration, httpx_mock
-    ):
+    def test_fetch_token_sends_correct_payload(self, auth_config: Configuration, httpx_mock):
         """Test that fetch_token sends the correct request payload."""
         httpx_mock.add_response(
             method="POST",
