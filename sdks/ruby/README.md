@@ -2,21 +2,22 @@
 
 Official Ruby SDK for the [Scope Platform](https://scope.play.base14.io/).
 
-[![Gem Version](https://badge.fury.io/rb/scope-client.svg)](https://rubygems.org/gems/scope-client)
 [![CI](https://github.com/base14/scope-sdk/actions/workflows/scope-ruby-sdk-ci.yml/badge.svg)](https://github.com/base14/scope-sdk/actions)
 
 ## Installation
 
+> **Note:** This gem is not yet published to RubyGems. Install from the git repository.
+
 Add to your Gemfile:
 
 ```ruby
-gem 'scope-client'
+gem 'scope-client', git: 'https://github.com/base14/scope-sdk.git', glob: 'sdks/ruby/*.gemspec'
 ```
 
-Or install directly:
+Then run:
 
 ```bash
-gem install scope-client
+bundle install
 ```
 
 ## Quick Start

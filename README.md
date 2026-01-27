@@ -24,8 +24,10 @@ Scope SDKs provide read-only access to the Scope Platform, enabling you to:
 
 ### Ruby
 
+Add to your Gemfile (not yet published to RubyGems):
+
 ```ruby
-gem install scope-client
+gem 'scope-client', git: 'https://github.com/base14/scope-sdk.git', glob: 'sdks/ruby/*.gemspec'
 ```
 
 ```ruby
@@ -48,8 +50,10 @@ rendered = client.render_prompt('my-prompt', {
 
 ### Python
 
+Install from git (not yet published to PyPI):
+
 ```bash
-pip install scope-client
+pip install git+https://github.com/base14/scope-sdk.git#subdirectory=sdks/python
 ```
 
 ```python

@@ -4,8 +4,10 @@ Official Python SDK for the [Scope Platform](https://scope.play.base14.io/).
 
 ## Installation
 
+> **Note:** This package is not yet published to PyPI. Install from the git repository.
+
 ```bash
-pip install scope-client
+pip install git+https://github.com/base14/scope-sdk.git#subdirectory=sdks/python
 ```
 
 ## Requirements
