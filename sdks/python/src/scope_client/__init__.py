@@ -5,7 +5,11 @@ easy access to prompts, versions, and template rendering.
 
 Example:
     >>> import scope_client
-    >>> scope_client.configure(api_key="sk_test_123")
+    >>> scope_client.configure(
+    ...     org_id="my-org",
+    ...     api_key="key_abc123",
+    ...     api_secret="secret_xyz"
+    ... )
     >>> client = scope_client.client()
 
     >>> # Fetch and render a prompt
@@ -15,9 +19,13 @@ Example:
     'Hello, Alice!'
 
 Environment Variables:
-    SCOPE_API_KEY: API key for authentication.
+    SCOPE_ORG_ID: Organization identifier.
+    SCOPE_API_KEY: API key ID for authentication.
+    SCOPE_API_SECRET: API key secret for authentication.
     SCOPE_API_URL: Base URL for the API (default: https://api.scope.io).
+    SCOPE_AUTH_API_URL: Auth API URL (default: https://auth.scope.io).
     SCOPE_ENVIRONMENT: Environment name (default: production).
+    SCOPE_TOKEN_REFRESH_BUFFER: Seconds before expiry to refresh token (default: 60).
 """
 
 from typing import Any, Optional
@@ -41,6 +49,7 @@ from scope_client.errors import (
     ConfigurationError,
     ConflictError,
     ConnectionError,
+    InvalidCredentialsError,
     MissingApiKeyError,
     MissingVariableError,
     NoProductionVersionError,
@@ -51,6 +60,7 @@ from scope_client.errors import (
     ScopeError,
     ServerError,
     TimeoutError,
+    TokenRefreshError,
     ValidationError,
 )
 from scope_client.resources import Prompt, PromptVersion, Resource
@@ -73,6 +83,8 @@ __all__ = [
     "ApiError",
     "AuthenticationError",
     "AuthorizationError",
+    "TokenRefreshError",
+    "InvalidCredentialsError",
     "NotFoundError",
     "ConflictError",
     "RateLimitError",

@@ -26,6 +26,7 @@ from scope_client.errors import (
     TimeoutError,
     error_from_response,
 )
+from scope_client.token_manager import TokenManager
 
 # HTTP status codes that should trigger a retry
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
@@ -50,6 +51,7 @@ class Connection:
     def __init__(self, config: Configuration) -> None:
         self._config = config
         self._client: Optional[httpx.Client] = None
+        self._token_manager = TokenManager(config)
 
     @property
     def client(self) -> httpx.Client:
@@ -81,13 +83,18 @@ class Connection:
             "User-Agent": f"scope-client-python/{VERSION}",
         }
 
-        if self._config.api_key:
-            headers["Authorization"] = f"Bearer {self._config.api_key}"
-
         if self._config.environment:
             headers["X-Scope-Environment"] = self._config.environment
 
         return headers
+
+    def _get_auth_header(self) -> dict[str, str]:
+        """Get current authorization header with fresh token.
+
+        Returns:
+            Dictionary with Authorization header.
+        """
+        return {"Authorization": f"Bearer {self._token_manager.get_access_token()}"}
 
     def get(self, path: str, params: Optional[dict[str, Any]] = None) -> Any:
         """Make a GET request.
@@ -198,7 +205,7 @@ class Connection:
                     url=path,
                     params=params,
                     json=json,
-                    headers={"X-Request-ID": request_id},
+                    headers={"X-Request-ID": request_id, **self._get_auth_header()},
                 )
 
                 elapsed_ms = (time.time() - start_time) * 1000

@@ -19,13 +19,20 @@ class Configuration:
     only when constructor arguments are not explicitly provided.
 
     Environment Variables:
-        SCOPE_API_KEY: API key for authentication.
+        SCOPE_ORG_ID: Organization identifier.
+        SCOPE_API_KEY: API key ID for authentication.
+        SCOPE_API_SECRET: API key secret for authentication.
         SCOPE_API_URL: Base URL for the API.
+        SCOPE_AUTH_API_URL: Auth API URL for token exchange.
         SCOPE_ENVIRONMENT: Environment name (e.g., 'production', 'staging').
+        SCOPE_TOKEN_REFRESH_BUFFER: Seconds before token expiry to refresh.
 
     Args:
-        api_key: API key for authentication.
+        org_id: Organization identifier.
+        api_key: API key ID for authentication.
+        api_secret: API key secret for authentication.
         base_url: Base URL for the Scope API.
+        auth_api_url: Auth API URL for token exchange.
         api_version: API version string.
         timeout: Request timeout in seconds.
         open_timeout: Connection timeout in seconds.
@@ -36,22 +43,32 @@ class Configuration:
         retry_max_delay: Maximum delay between retries in seconds.
         telemetry_enabled: Whether to enable telemetry.
         environment: Environment name for the client.
+        token_refresh_buffer: Seconds before token expiry to refresh.
 
     Example:
-        >>> config = Configuration(api_key="sk_test_123")
-        >>> config.api_key
-        'sk_test_123'
+        >>> config = Configuration(
+        ...     org_id="my-org",
+        ...     api_key="key_abc123",
+        ...     api_secret="secret_xyz"
+        ... )
+        >>> config.org_id
+        'my-org'
 
         >>> # Load from environment
         >>> import os
-        >>> os.environ["SCOPE_API_KEY"] = "sk_env_123"
+        >>> os.environ["SCOPE_ORG_ID"] = "my-org"
+        >>> os.environ["SCOPE_API_KEY"] = "key_abc123"
+        >>> os.environ["SCOPE_API_SECRET"] = "secret_xyz"
         >>> config = Configuration()
-        >>> config.api_key
-        'sk_env_123'
+        >>> config.org_id
+        'my-org'
     """
 
+    org_id: Optional[str] = field(default=None)
     api_key: Optional[str] = field(default=None)
+    api_secret: Optional[str] = field(default=None)
     base_url: str = field(default="https://api.scope.io")
+    auth_api_url: str = field(default="https://auth.scope.io")
     api_version: str = field(default="v1")
     timeout: int = field(default=30)
     open_timeout: int = field(default=10)
@@ -62,24 +79,45 @@ class Configuration:
     retry_max_delay: float = field(default=30.0)
     telemetry_enabled: bool = field(default=True)
     environment: str = field(default="production")
+    token_refresh_buffer: int = field(default=60)
 
     def __post_init__(self) -> None:
         """Load values from environment variables if not explicitly set."""
         # We need to use object.__setattr__ because the dataclass is frozen
+        if self.org_id is None:
+            env_val = os.environ.get("SCOPE_ORG_ID")
+            if env_val:
+                object.__setattr__(self, "org_id", env_val)
+
         if self.api_key is None:
             env_key = os.environ.get("SCOPE_API_KEY")
             if env_key:
                 object.__setattr__(self, "api_key", env_key)
+
+        if self.api_secret is None:
+            env_val = os.environ.get("SCOPE_API_SECRET")
+            if env_val:
+                object.__setattr__(self, "api_secret", env_val)
 
         if self.base_url == "https://api.scope.io":
             env_url = os.environ.get("SCOPE_API_URL")
             if env_url:
                 object.__setattr__(self, "base_url", env_url.rstrip("/"))
 
+        if self.auth_api_url == "https://auth.scope.io":
+            env_val = os.environ.get("SCOPE_AUTH_API_URL")
+            if env_val:
+                object.__setattr__(self, "auth_api_url", env_val.rstrip("/"))
+
         if self.environment == "production":
             env_environment = os.environ.get("SCOPE_ENVIRONMENT")
             if env_environment:
                 object.__setattr__(self, "environment", env_environment)
+
+        if self.token_refresh_buffer == 60:
+            env_val = os.environ.get("SCOPE_TOKEN_REFRESH_BUFFER")
+            if env_val:
+                object.__setattr__(self, "token_refresh_buffer", int(env_val))
 
     def merge(self, **kwargs: Any) -> "Configuration":
         """Create a new Configuration with merged values.
@@ -110,8 +148,11 @@ class Configuration:
             Dictionary representation of configuration.
         """
         return {
+            "org_id": self.org_id,
             "api_key": self.api_key,
+            "api_secret": self.api_secret,
             "base_url": self.base_url,
+            "auth_api_url": self.auth_api_url,
             "api_version": self.api_version,
             "timeout": self.timeout,
             "open_timeout": self.open_timeout,
@@ -122,6 +163,7 @@ class Configuration:
             "retry_max_delay": self.retry_max_delay,
             "telemetry_enabled": self.telemetry_enabled,
             "environment": self.environment,
+            "token_refresh_buffer": self.token_refresh_buffer,
         }
 
     @property
@@ -131,18 +173,22 @@ class Configuration:
         Returns:
             Full API URL with version path.
         """
-        return f"{self.base_url}/{self.api_version}"
+        return f"{self.base_url}/api/{self.api_version}"
 
     def validate(self) -> None:
         """Validate configuration.
 
         Raises:
-            MissingApiKeyError: If api_key is not set.
+            ConfigurationError: If required credentials are not set.
         """
-        from scope_client.errors import MissingApiKeyError
+        from scope_client.errors import ConfigurationError
 
+        if not self.org_id:
+            raise ConfigurationError("org_id is required")
         if not self.api_key:
-            raise MissingApiKeyError()
+            raise ConfigurationError("api_key is required")
+        if not self.api_secret:
+            raise ConfigurationError("api_secret is required")
 
 
 class ConfigurationManager:

@@ -125,7 +125,7 @@ module ScopeClient
     end
 
     def validate_config!
-      raise MissingApiKeyError if @config.api_key.nil? || @config.api_key.empty?
+      @config.validate!
     end
 
     def fetch_with_cache(key, options, &block)

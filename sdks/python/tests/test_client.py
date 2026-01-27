@@ -8,7 +8,7 @@ from pytest_httpx import HTTPXMock
 from scope_client import Configuration, ScopeClient, configure, reset_configuration
 from scope_client.errors import (
     AuthenticationError,
-    MissingApiKeyError,
+    ConfigurationError,
     MissingVariableError,
     NoProductionVersionError,
     NotFoundError,
@@ -24,11 +24,12 @@ class TestScopeClientInit:
         client = ScopeClient(config)
         assert client.config.api_key == config.api_key
 
-    def test_init_with_global_config(self, api_key: str):
+    def test_init_with_global_config(self, org_id: str, api_key: str, api_secret: str):
         """Test initialization with global configuration."""
-        configure(api_key=api_key)
+        configure(org_id=org_id, api_key=api_key, api_secret=api_secret)
         client = ScopeClient()
         assert client.config.api_key == api_key
+        assert client.config.org_id == org_id
 
     def test_init_with_options_override(self, config: Configuration):
         """Test initialization with options overriding config."""
@@ -37,9 +38,9 @@ class TestScopeClientInit:
         assert client.config.api_key == config.api_key  # Original preserved
 
     def test_init_without_api_key_raises(self):
-        """Test initialization without API key raises error."""
+        """Test initialization without credentials raises error."""
         reset_configuration()
-        with pytest.raises(MissingApiKeyError):
+        with pytest.raises(ConfigurationError):
             ScopeClient()
 
     def test_cache_enabled_by_default(self, config: Configuration):
@@ -47,9 +48,14 @@ class TestScopeClientInit:
         client = ScopeClient(config)
         assert client._cache is not None
 
-    def test_cache_disabled(self, api_key: str):
+    def test_cache_disabled(self, org_id: str, api_key: str, api_secret: str):
         """Test cache can be disabled."""
-        config = Configuration(api_key=api_key, cache_enabled=False)
+        config = Configuration(
+            org_id=org_id,
+            api_key=api_key,
+            api_secret=api_secret,
+            cache_enabled=False,
+        )
         client = ScopeClient(config)
         assert client._cache is None
 
@@ -355,9 +361,14 @@ class TestScopeClientClearCache:
         # Two requests because cache was cleared
         assert len(httpx_mock.get_requests()) == 2
 
-    def test_clear_cache_disabled(self, api_key: str):
+    def test_clear_cache_disabled(self, org_id: str, api_key: str, api_secret: str):
         """Test clear_cache with disabled cache doesn't error."""
-        config = Configuration(api_key=api_key, cache_enabled=False)
+        config = Configuration(
+            org_id=org_id,
+            api_key=api_key,
+            api_secret=api_secret,
+            cache_enabled=False,
+        )
         client = ScopeClient(config)
         client.clear_cache()  # Should not raise
 

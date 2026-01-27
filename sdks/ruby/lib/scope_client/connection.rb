@@ -18,6 +18,7 @@ module ScopeClient
 
     def initialize(config)
       @config = config
+      @token_manager = TokenManager.new(config)
       @connection = build_connection
     end
 
@@ -46,7 +47,7 @@ module ScopeClient
 
     def build_connection
       Faraday.new(url: base_url) do |conn|
-        conn.use Middleware::Authentication, config.api_key
+        conn.use Middleware::Authentication, @token_manager
         conn.use Middleware::Telemetry if config.telemetry_enabled
 
         conn.request :retry, retry_options

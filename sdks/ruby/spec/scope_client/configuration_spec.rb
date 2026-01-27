@@ -31,14 +31,25 @@ RSpec.describe ScopeClient::Configuration do
       expect(custom_config.cache_ttl).to eq(600)
     end
 
-    it 'loads api_key from environment' do
+    it 'loads credentials from environment' do
+      allow(ENV).to receive(:fetch).with('SCOPE_ORG_ID', nil).and_return('env_org_id')
       allow(ENV).to receive(:fetch).with('SCOPE_API_KEY', nil).and_return('env_api_key')
+      allow(ENV).to receive(:fetch).with('SCOPE_API_SECRET', nil).and_return('env_api_secret')
       allow(ENV).to receive(:fetch).with('SCOPE_API_URL', anything).and_call_original
+      allow(ENV).to receive(:fetch).with('SCOPE_AUTH_API_URL', anything).and_call_original
       allow(ENV).to receive(:fetch).with('SCOPE_ENVIRONMENT', anything).and_call_original
+      allow(ENV).to receive(:fetch).with('SCOPE_TOKEN_REFRESH_BUFFER', anything).and_call_original
 
       new_config = described_class.new
 
+      expect(new_config.org_id).to eq('env_org_id')
       expect(new_config.api_key).to eq('env_api_key')
+      expect(new_config.api_secret).to eq('env_api_secret')
+    end
+
+    it 'sets default auth_api_url and token_refresh_buffer' do
+      expect(config.auth_api_url).to eq('https://auth.scope.io')
+      expect(config.token_refresh_buffer).to eq(60)
     end
   end
 

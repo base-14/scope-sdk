@@ -34,6 +34,8 @@ module ScopeClient
   # HTTP/API errors
   class ApiError < Error; end
   class AuthenticationError < ApiError; end
+  class TokenRefreshError < AuthenticationError; end
+  class InvalidCredentialsError < AuthenticationError; end
   class AuthorizationError < ApiError; end
   class NotFoundError < ApiError; end
   class ConflictError < ApiError; end

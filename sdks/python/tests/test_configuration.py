@@ -5,7 +5,7 @@ import os
 import pytest
 
 from scope_client.configuration import Configuration, ConfigurationManager
-from scope_client.errors import MissingApiKeyError
+from scope_client.errors import ConfigurationError, MissingApiKeyError
 
 
 class TestConfiguration:
@@ -106,17 +106,33 @@ class TestConfiguration:
     def test_api_url_property(self):
         """Test api_url property."""
         config = Configuration(base_url="https://api.scope.io", api_version="v2")
-        assert config.api_url == "https://api.scope.io/v2"
+        assert config.api_url == "https://api.scope.io/api/v2"
 
-    def test_validate_with_api_key(self):
-        """Test validation passes with API key."""
-        config = Configuration(api_key="sk_test")
+    def test_validate_with_all_credentials(self):
+        """Test validation passes with all credentials."""
+        config = Configuration(
+            org_id="test_org",
+            api_key="sk_test",
+            api_secret="secret_test",
+        )
         config.validate()  # Should not raise
 
+    def test_validate_without_org_id(self):
+        """Test validation fails without org_id."""
+        config = Configuration(api_key="sk_test", api_secret="secret_test")
+        with pytest.raises(ConfigurationError, match="org_id is required"):
+            config.validate()
+
     def test_validate_without_api_key(self):
-        """Test validation fails without API key."""
-        config = Configuration()
-        with pytest.raises(MissingApiKeyError):
+        """Test validation fails without api_key."""
+        config = Configuration(org_id="test_org", api_secret="secret_test")
+        with pytest.raises(ConfigurationError, match="api_key is required"):
+            config.validate()
+
+    def test_validate_without_api_secret(self):
+        """Test validation fails without api_secret."""
+        config = Configuration(org_id="test_org", api_key="sk_test")
+        with pytest.raises(ConfigurationError, match="api_secret is required"):
             config.validate()
 
 

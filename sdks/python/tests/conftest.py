@@ -3,6 +3,7 @@
 import os
 from collections.abc import Generator
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -15,7 +16,15 @@ from scope_client.cache import Cache
 def reset_globals() -> Generator[None, None, None]:
     """Reset global state before each test."""
     # Clear environment variables that might affect tests
-    env_vars = ["SCOPE_API_KEY", "SCOPE_API_URL", "SCOPE_ENVIRONMENT"]
+    env_vars = [
+        "SCOPE_ORG_ID",
+        "SCOPE_API_KEY",
+        "SCOPE_API_SECRET",
+        "SCOPE_API_URL",
+        "SCOPE_AUTH_API_URL",
+        "SCOPE_ENVIRONMENT",
+        "SCOPE_TOKEN_REFRESH_BUFFER",
+    ]
     original_values = {var: os.environ.get(var) for var in env_vars}
 
     for var in env_vars:
@@ -39,17 +48,32 @@ def reset_globals() -> Generator[None, None, None]:
 
 
 @pytest.fixture
+def org_id() -> str:
+    """Provide a test organization ID."""
+    return "test_org"
+
+
+@pytest.fixture
 def api_key() -> str:
     """Provide a test API key."""
     return "sk_test_123456789"
 
 
 @pytest.fixture
-def config(api_key: str) -> Configuration:
+def api_secret() -> str:
+    """Provide a test API secret."""
+    return "test_api_secret"
+
+
+@pytest.fixture
+def config(org_id: str, api_key: str, api_secret: str) -> Configuration:
     """Provide a test configuration."""
     return Configuration(
+        org_id=org_id,
         api_key=api_key,
+        api_secret=api_secret,
         base_url="https://api.test.scope.io",
+        auth_api_url="https://auth.test.scope.io",
         cache_enabled=True,
         cache_ttl=300,
     )
@@ -114,3 +138,25 @@ def mock_list_response(prompt_data: dict[str, Any]) -> dict[str, Any]:
             "total_pages": 1,
         },
     }
+
+
+@pytest.fixture
+def mock_token_response() -> dict[str, Any]:
+    """Mock auth API token response."""
+    return {
+        "access_token": "test_jwt_token_abc123",
+        "expires_in": 3600,
+        "token_type": "Bearer",
+        "client_type": "sdk",
+        "environment": "production",
+    }
+
+
+@pytest.fixture(autouse=True)
+def mock_token_manager() -> Generator[MagicMock, None, None]:
+    """Mock TokenManager to avoid auth API calls in tests."""
+    with patch("scope_client.connection.TokenManager") as mock_cls:
+        mock_instance = MagicMock()
+        mock_instance.get_access_token.return_value = "test_jwt_token_abc123"
+        mock_cls.return_value = mock_instance
+        yield mock_instance

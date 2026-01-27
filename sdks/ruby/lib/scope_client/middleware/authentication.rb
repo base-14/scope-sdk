@@ -5,13 +5,13 @@ require 'faraday'
 module ScopeClient
   module Middleware
     class Authentication < Faraday::Middleware
-      def initialize(app, api_key)
+      def initialize(app, token_manager)
         super(app)
-        @api_key = api_key
+        @token_manager = token_manager
       end
 
       def call(env)
-        env[:request_headers]['Authorization'] = "Bearer #{@api_key}"
+        env[:request_headers]['Authorization'] = "Bearer #{@token_manager.access_token}"
         env[:request_headers]['User-Agent'] = "scope-client-ruby/#{ScopeClient::VERSION}"
         env[:request_headers]['Content-Type'] = 'application/json'
         env[:request_headers]['Accept'] = 'application/json'

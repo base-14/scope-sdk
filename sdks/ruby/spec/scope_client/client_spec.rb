@@ -8,16 +8,28 @@ RSpec.describe ScopeClient::Client do
       expect(client.config.api_key).to eq('test_api_key_12345')
     end
 
-    it 'raises MissingApiKeyError when api_key is nil' do
+    it 'raises ConfigurationError when api_key is nil' do
       ScopeClient.configure { |c| c.api_key = nil }
 
-      expect { described_class.new }.to raise_error(ScopeClient::MissingApiKeyError)
+      expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /api_key is required/)
     end
 
-    it 'raises MissingApiKeyError when api_key is empty' do
+    it 'raises ConfigurationError when api_key is empty' do
       ScopeClient.configure { |c| c.api_key = '' }
 
-      expect { described_class.new }.to raise_error(ScopeClient::MissingApiKeyError)
+      expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /api_key is required/)
+    end
+
+    it 'raises ConfigurationError when org_id is nil' do
+      ScopeClient.configure { |c| c.org_id = nil }
+
+      expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /org_id is required/)
+    end
+
+    it 'raises ConfigurationError when api_secret is nil' do
+      ScopeClient.configure { |c| c.api_secret = nil }
+
+      expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /api_secret is required/)
     end
 
     it 'merges custom options with global config' do

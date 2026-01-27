@@ -33,9 +33,24 @@ RSpec.configure do |config|
   config.before do
     ScopeClient.reset_configuration!
     ScopeClient.configure do |c|
+      c.org_id = 'test_org'
       c.api_key = 'test_api_key_12345'
+      c.api_secret = 'test_api_secret'
       c.base_url = 'https://api.scope.io'
+      c.auth_api_url = 'https://auth.scope.io'
     end
+
+    # Stub auth API token endpoint
+    stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+      .to_return(
+        status: 200,
+        body: {
+          access_token: 'test_jwt_token',
+          expires_in: 3600,
+          token_type: 'Bearer'
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
   end
 end
 

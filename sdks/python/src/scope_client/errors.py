@@ -101,6 +101,42 @@ class AuthenticationError(ApiError):
         )
 
 
+class TokenRefreshError(AuthenticationError):
+    """Raised when token refresh fails."""
+
+    def __init__(
+        self,
+        message: str = "Failed to refresh authentication token.",
+        http_body: Optional[str] = None,
+        error_code: Optional[str] = None,
+        request_id: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            message,
+            http_body=http_body,
+            error_code=error_code,
+            request_id=request_id,
+        )
+
+
+class InvalidCredentialsError(AuthenticationError):
+    """Raised when SDK credentials are invalid."""
+
+    def __init__(
+        self,
+        message: str = "Invalid SDK credentials.",
+        http_body: Optional[str] = None,
+        error_code: Optional[str] = None,
+        request_id: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            message,
+            http_body=http_body,
+            error_code=error_code,
+            request_id=request_id,
+        )
+
+
 class AuthorizationError(ApiError):
     """Raised when authorization fails (403)."""
 
