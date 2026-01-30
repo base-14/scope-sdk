@@ -4,14 +4,20 @@ A Python SDK for the Scope Platform, providing
 easy access to prompts, versions, and template rendering.
 
 Example:
-    >>> import scope_client
-    >>> scope_client.configure(
-    ...     org_id="my-org",
-    ...     api_key="key_abc123",
-    ...     api_secret="secret_xyz"
-    ... )
-    >>> client = scope_client.client()
-
+    >>> from scope_client import ScopeClient, ApiKeyCredentials
+    >>>
+    >>> # Create credentials from environment variables
+    >>> credentials = ApiKeyCredentials.from_env()
+    >>> # Or explicitly:
+    >>> # credentials = ApiKeyCredentials(
+    >>> #     org_id="my-org",
+    >>> #     api_key="key_abc123",
+    >>> #     api_secret="secret_xyz"
+    >>> # )
+    >>>
+    >>> # Create a client
+    >>> client = ScopeClient(credentials=credentials)
+    >>>
     >>> # Fetch and render a prompt
     >>> version = client.get_prompt_production("greeting")
     >>> rendered = version.render({"name": "Alice"})
@@ -28,7 +34,7 @@ Environment Variables:
     SCOPE_TOKEN_REFRESH_BUFFER: Seconds before expiry to refresh token (default: 60).
 """
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from scope_client._telemetry import (
     ErrorInfo,
@@ -42,6 +48,7 @@ from scope_client._telemetry import (
 from scope_client._version import VERSION, __version__
 from scope_client.client import ScopeClient
 from scope_client.configuration import Configuration, ConfigurationManager
+from scope_client.credentials import ApiKeyCredentials, Credentials, CredentialsProtocol
 from scope_client.errors import (
     ApiError,
     AuthenticationError,
@@ -65,6 +72,9 @@ from scope_client.errors import (
 )
 from scope_client.resources import Prompt, PromptVersion, Resource
 
+if TYPE_CHECKING:
+    pass
+
 __all__ = [
     # Version
     "__version__",
@@ -72,6 +82,10 @@ __all__ = [
     # Main classes
     "ScopeClient",
     "Configuration",
+    # Credentials
+    "ApiKeyCredentials",
+    "Credentials",
+    "CredentialsProtocol",
     # Resources
     "Resource",
     "Prompt",
@@ -112,15 +126,18 @@ __all__ = [
 ]
 
 
-def configure(**options: Any) -> Configuration:
+def configure(
+    credentials: Optional["Credentials"] = None,
+    **options: Any,
+) -> Configuration:
     """Configure the global Scope client settings.
 
     Sets up the global configuration that will be used by clients
     created with the `client()` function.
 
     Args:
+        credentials: Credentials instance for authentication.
         **options: Configuration options.
-            api_key: API key for authentication.
             base_url: Base URL for the API.
             api_version: API version string.
             timeout: Request timeout in seconds.
@@ -138,22 +155,39 @@ def configure(**options: Any) -> Configuration:
 
     Example:
         >>> import scope_client
+        >>> from scope_client import ApiKeyCredentials
+        >>>
+        >>> # Configure with credentials from environment
+        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
+        >>>
+        >>> # Or with explicit credentials
         >>> scope_client.configure(
-        ...     api_key="sk_test_123",
+        ...     credentials=ApiKeyCredentials(
+        ...         org_id="my-org",
+        ...         api_key="key_abc123",
+        ...         api_secret="secret_xyz"
+        ...     ),
         ...     cache_enabled=True,
         ...     cache_ttl=600
         ... )
     """
+    if credentials is not None:
+        options["credentials"] = credentials
     return ConfigurationManager.configure(**options)
 
 
-def client(config: Optional[Configuration] = None, **options: Any) -> ScopeClient:
+def client(
+    credentials: Optional["Credentials"] = None,
+    config: Optional[Configuration] = None,
+    **options: Any,
+) -> ScopeClient:
     """Create a new ScopeClient instance.
 
     Creates a client using the provided configuration, the global
     configuration, or a combination of both.
 
     Args:
+        credentials: Optional Credentials instance for authentication.
         config: Optional Configuration instance to use.
         **options: Configuration options to merge with the base config.
 
@@ -162,13 +196,20 @@ def client(config: Optional[Configuration] = None, **options: Any) -> ScopeClien
 
     Example:
         >>> import scope_client
-        >>> scope_client.configure(api_key="sk_test_123")
+        >>> from scope_client import ApiKeyCredentials
+        >>>
+        >>> # Using credentials directly
+        >>> credentials = ApiKeyCredentials.from_env()
+        >>> client = scope_client.client(credentials=credentials)
+        >>>
+        >>> # Using global configuration
+        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
         >>> client = scope_client.client()
-
+        >>>
         >>> # Or with per-client options
         >>> client = scope_client.client(cache_enabled=False)
     """
-    return ScopeClient(config=config, **options)
+    return ScopeClient(credentials=credentials, config=config, **options)
 
 
 def configuration() -> Configuration:
@@ -179,10 +220,11 @@ def configuration() -> Configuration:
 
     Example:
         >>> import scope_client
-        >>> scope_client.configure(api_key="sk_test_123")
+        >>> from scope_client import ApiKeyCredentials
+        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
         >>> config = scope_client.configuration()
-        >>> print(config.api_key)
-        'sk_test_123'
+        >>> print(config.base_url)
+        'https://api.scope.io'
     """
     return ConfigurationManager.get()
 
@@ -196,9 +238,10 @@ def reset_configuration() -> None:
 
     Example:
         >>> import scope_client
-        >>> scope_client.configure(api_key="sk_test_123")
+        >>> from scope_client import ApiKeyCredentials
+        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
         >>> scope_client.reset_configuration()
         >>> config = scope_client.configuration()
-        >>> print(config.api_key)  # Will be None or from SCOPE_API_KEY env var
+        >>> print(config.credentials)  # Will be None
     """
     ConfigurationManager.reset()

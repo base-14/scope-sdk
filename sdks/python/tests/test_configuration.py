@@ -4,6 +4,7 @@ import os
 
 import pytest
 
+from scope_client import ApiKeyCredentials
 from scope_client.configuration import Configuration, ConfigurationManager
 from scope_client.errors import ConfigurationError
 
@@ -14,7 +15,7 @@ class TestConfiguration:
     def test_default_values(self):
         """Test default configuration values."""
         config = Configuration()
-        assert config.api_key is None
+        assert config.credentials is None
         assert config.base_url == "https://api.scope.io"
         assert config.api_version == "v1"
         assert config.timeout == 30
@@ -27,24 +28,18 @@ class TestConfiguration:
         assert config.telemetry_enabled is True
         assert config.environment == "production"
 
-    def test_custom_values(self):
+    def test_custom_values(self, credentials: ApiKeyCredentials):
         """Test configuration with custom values."""
         config = Configuration(
-            api_key="sk_test_123",
+            credentials=credentials,
             base_url="https://custom.api.io",
             timeout=60,
             cache_enabled=False,
         )
-        assert config.api_key == "sk_test_123"
+        assert config.credentials.api_key == credentials.api_key
         assert config.base_url == "https://custom.api.io"
         assert config.timeout == 60
         assert config.cache_enabled is False
-
-    def test_environment_variable_api_key(self):
-        """Test API key from environment variable."""
-        os.environ["SCOPE_API_KEY"] = "sk_env_key"
-        config = Configuration()
-        assert config.api_key == "sk_env_key"
 
     def test_environment_variable_api_url(self):
         """Test API URL from environment variable."""
@@ -58,31 +53,31 @@ class TestConfiguration:
         config = Configuration()
         assert config.environment == "staging"
 
-    def test_explicit_values_override_env(self):
+    def test_explicit_values_override_env(self, credentials: ApiKeyCredentials):
         """Test that explicit values override environment variables."""
-        os.environ["SCOPE_API_KEY"] = "sk_env_key"
-        config = Configuration(api_key="sk_explicit_key")
-        assert config.api_key == "sk_explicit_key"
+        os.environ["SCOPE_API_URL"] = "https://env.api.io"
+        config = Configuration(credentials=credentials, base_url="https://explicit.api.io")
+        assert config.base_url == "https://explicit.api.io"
 
-    def test_immutability(self):
+    def test_immutability(self, credentials: ApiKeyCredentials):
         """Test that configuration is immutable."""
-        config = Configuration(api_key="sk_test")
+        config = Configuration(credentials=credentials)
         with pytest.raises(AttributeError):
-            config.api_key = "new_key"
+            config.base_url = "new_url"
 
-    def test_merge_creates_new_instance(self):
+    def test_merge_creates_new_instance(self, credentials: ApiKeyCredentials):
         """Test that merge creates a new configuration."""
-        config1 = Configuration(api_key="sk_test", timeout=30)
+        config1 = Configuration(credentials=credentials, timeout=30)
         config2 = config1.merge(timeout=60)
 
         assert config1.timeout == 30
         assert config2.timeout == 60
         assert config1 is not config2
-        assert config2.api_key == "sk_test"  # Preserved from original
+        assert config2.credentials.api_key == credentials.api_key  # Preserved from original
 
-    def test_merge_multiple_values(self):
+    def test_merge_multiple_values(self, credentials: ApiKeyCredentials):
         """Test merging multiple values."""
-        config1 = Configuration(api_key="sk_test")
+        config1 = Configuration(credentials=credentials)
         config2 = config1.merge(
             timeout=60,
             cache_enabled=False,
@@ -92,47 +87,43 @@ class TestConfiguration:
         assert config2.cache_enabled is False
         assert config2.max_retries == 5
 
-    def test_to_dict(self):
+    def test_to_dict(self, credentials: ApiKeyCredentials):
         """Test converting configuration to dictionary."""
-        config = Configuration(api_key="sk_test", timeout=60)
+        config = Configuration(credentials=credentials, timeout=60)
         data = config.to_dict()
 
         assert isinstance(data, dict)
-        assert data["api_key"] == "sk_test"
+        assert data["credentials"]["api_key"] == credentials.api_key
+        assert data["credentials"]["api_secret"] == "[REDACTED]"
         assert data["timeout"] == 60
         assert "base_url" in data
         assert "cache_enabled" in data
 
-    def test_api_url_property(self):
+    def test_api_url_property(self, credentials: ApiKeyCredentials):
         """Test api_url property."""
-        config = Configuration(base_url="https://api.scope.io", api_version="v2")
+        config = Configuration(
+            credentials=credentials,
+            base_url="https://api.scope.io",
+            api_version="v2",
+        )
         assert config.api_url == "https://api.scope.io/api/v2"
 
-    def test_validate_with_all_credentials(self):
-        """Test validation passes with all credentials."""
-        config = Configuration(
-            org_id="test_org",
-            api_key="sk_test",
-            api_secret="secret_test",
-        )
+    def test_validate_with_credentials(self, credentials: ApiKeyCredentials):
+        """Test validation passes with credentials."""
+        config = Configuration(credentials=credentials)
         config.validate()  # Should not raise
 
-    def test_validate_without_org_id(self):
-        """Test validation fails without org_id."""
-        config = Configuration(api_key="sk_test", api_secret="secret_test")
-        with pytest.raises(ConfigurationError, match="org_id is required"):
+    def test_validate_without_credentials(self):
+        """Test validation fails without credentials."""
+        config = Configuration()
+        with pytest.raises(ConfigurationError, match="credentials is required"):
             config.validate()
 
-    def test_validate_without_api_key(self):
-        """Test validation fails without api_key."""
-        config = Configuration(org_id="test_org", api_secret="secret_test")
+    def test_validate_with_incomplete_credentials(self):
+        """Test validation fails with incomplete credentials."""
+        credentials = ApiKeyCredentials(org_id="test_org")  # Missing api_key and api_secret
+        config = Configuration(credentials=credentials)
         with pytest.raises(ConfigurationError, match="api_key is required"):
-            config.validate()
-
-    def test_validate_without_api_secret(self):
-        """Test validation fails without api_secret."""
-        config = Configuration(org_id="test_org", api_key="sk_test")
-        with pytest.raises(ConfigurationError, match="api_secret is required"):
             config.validate()
 
 
@@ -145,40 +136,40 @@ class TestConfigurationManager:
         assert isinstance(config, Configuration)
         assert config.base_url == "https://api.scope.io"
 
-    def test_set_and_get(self):
+    def test_set_and_get(self, credentials: ApiKeyCredentials):
         """Test setting and getting configuration."""
-        custom_config = Configuration(api_key="sk_test_123")
+        custom_config = Configuration(credentials=credentials)
         ConfigurationManager.set(custom_config)
 
         retrieved = ConfigurationManager.get()
-        assert retrieved.api_key == "sk_test_123"
+        assert retrieved.credentials.api_key == credentials.api_key
 
-    def test_reset(self):
+    def test_reset(self, credentials: ApiKeyCredentials):
         """Test resetting configuration."""
-        ConfigurationManager.set(Configuration(api_key="sk_test"))
+        ConfigurationManager.set(Configuration(credentials=credentials))
         ConfigurationManager.reset()
 
         config = ConfigurationManager.get()
-        assert config.api_key is None  # Back to default
+        assert config.credentials is None  # Back to default
 
-    def test_configure_from_scratch(self):
+    def test_configure_from_scratch(self, credentials: ApiKeyCredentials):
         """Test configure when no existing config."""
         ConfigurationManager.reset()
-        config = ConfigurationManager.configure(api_key="sk_new", timeout=90)
+        config = ConfigurationManager.configure(credentials=credentials, timeout=90)
 
-        assert config.api_key == "sk_new"
+        assert config.credentials.api_key == credentials.api_key
         assert config.timeout == 90
 
-    def test_configure_merges_existing(self):
+    def test_configure_merges_existing(self, credentials: ApiKeyCredentials):
         """Test configure merges with existing config."""
-        ConfigurationManager.configure(api_key="sk_original", timeout=30)
+        ConfigurationManager.configure(credentials=credentials, timeout=30)
         config = ConfigurationManager.configure(timeout=60)
 
-        assert config.api_key == "sk_original"  # Preserved
+        assert config.credentials.api_key == credentials.api_key  # Preserved
         assert config.timeout == 60  # Updated
 
-    def test_configure_updates_global(self):
+    def test_configure_updates_global(self, credentials: ApiKeyCredentials):
         """Test that configure updates the global configuration."""
-        ConfigurationManager.configure(api_key="sk_global")
+        ConfigurationManager.configure(credentials=credentials)
         config = ConfigurationManager.get()
-        assert config.api_key == "sk_global"
+        assert config.credentials.api_key == credentials.api_key

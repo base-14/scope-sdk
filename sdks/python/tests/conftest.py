@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from scope_client import Configuration, reset_configuration
+from scope_client import ApiKeyCredentials, Configuration, reset_configuration
 from scope_client._telemetry import Telemetry
 from scope_client.cache import Cache
 
@@ -66,12 +66,20 @@ def api_secret() -> str:
 
 
 @pytest.fixture
-def config(org_id: str, api_key: str, api_secret: str) -> Configuration:
-    """Provide a test configuration."""
-    return Configuration(
+def credentials(org_id: str, api_key: str, api_secret: str) -> ApiKeyCredentials:
+    """Provide test credentials."""
+    return ApiKeyCredentials(
         org_id=org_id,
         api_key=api_key,
         api_secret=api_secret,
+    )
+
+
+@pytest.fixture
+def config(credentials: ApiKeyCredentials) -> Configuration:
+    """Provide a test configuration."""
+    return Configuration(
+        credentials=credentials,
         base_url="https://api.test.scope.io",
         auth_api_url="https://auth.test.scope.io",
         cache_enabled=True,

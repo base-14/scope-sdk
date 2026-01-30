@@ -7,9 +7,7 @@ module ScopeClient
     include MonitorMixin
 
     DEFAULTS = {
-      org_id: nil,
-      api_key: nil,
-      api_secret: nil,
+      credentials: nil,
       base_url: 'https://api.scope.io',
       auth_api_url: 'https://auth.scope.io',
       api_version: 'v1',
@@ -50,24 +48,24 @@ module ScopeClient
 
     def to_h
       synchronize do
-        ATTRIBUTES.each_with_object({}) do |attr, hash|
+        result = ATTRIBUTES.each_with_object({}) do |attr, hash|
           hash[attr] = public_send(attr)
         end
+        # Convert credentials to hash if present
+        result[:credentials] = @credentials&.to_h
+        result
       end
     end
 
     def validate!
-      raise ConfigurationError, 'org_id is required' if @org_id.nil? || @org_id.to_s.empty?
-      raise ConfigurationError, 'api_key is required' if @api_key.nil? || @api_key.to_s.empty?
-      raise ConfigurationError, 'api_secret is required' if @api_secret.nil? || @api_secret.to_s.empty?
+      raise ConfigurationError, 'credentials is required' if @credentials.nil?
+
+      @credentials.validate!
     end
 
     private
 
     def load_from_environment!
-      @org_id ||= ENV.fetch('SCOPE_ORG_ID', nil)
-      @api_key ||= ENV.fetch('SCOPE_API_KEY', nil)
-      @api_secret ||= ENV.fetch('SCOPE_API_SECRET', nil)
       @base_url = ENV.fetch('SCOPE_API_URL', @base_url)
       @auth_api_url = ENV.fetch('SCOPE_AUTH_API_URL', @auth_api_url)
       @environment = ENV.fetch('SCOPE_ENVIRONMENT', @environment.to_s).to_sym

@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 require_relative 'scope_client/version'
-require_relative 'scope_client/configuration'
 require_relative 'scope_client/errors'
+require_relative 'scope_client/credentials'
+require_relative 'scope_client/configuration'
 require_relative 'scope_client/token_manager'
 require_relative 'scope_client/cache'
 require_relative 'scope_client/renderer'

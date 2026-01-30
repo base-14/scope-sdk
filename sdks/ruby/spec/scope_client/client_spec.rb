@@ -5,29 +5,55 @@ RSpec.describe ScopeClient::Client do
 
   describe '#initialize' do
     it 'creates client with default configuration' do
-      expect(client.config.api_key).to eq('test_api_key_12345')
+      expect(client.config.credentials.api_key).to eq('test_api_key_12345')
+    end
+
+    it 'raises ConfigurationError when credentials is nil' do
+      ScopeClient.configure { |c| c.credentials = nil }
+
+      expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /credentials is required/)
     end
 
     it 'raises ConfigurationError when api_key is nil' do
-      ScopeClient.configure { |c| c.api_key = nil }
+      credentials = ScopeClient::Credentials::ApiKey.new(
+        org_id: 'test_org',
+        api_key: nil,
+        api_secret: 'test_secret'
+      )
+      ScopeClient.configure { |c| c.credentials = credentials }
 
       expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /api_key is required/)
     end
 
     it 'raises ConfigurationError when api_key is empty' do
-      ScopeClient.configure { |c| c.api_key = '' }
+      credentials = ScopeClient::Credentials::ApiKey.new(
+        org_id: 'test_org',
+        api_key: '',
+        api_secret: 'test_secret'
+      )
+      ScopeClient.configure { |c| c.credentials = credentials }
 
       expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /api_key is required/)
     end
 
     it 'raises ConfigurationError when org_id is nil' do
-      ScopeClient.configure { |c| c.org_id = nil }
+      credentials = ScopeClient::Credentials::ApiKey.new(
+        org_id: nil,
+        api_key: 'test_key',
+        api_secret: 'test_secret'
+      )
+      ScopeClient.configure { |c| c.credentials = credentials }
 
       expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /org_id is required/)
     end
 
     it 'raises ConfigurationError when api_secret is nil' do
-      ScopeClient.configure { |c| c.api_secret = nil }
+      credentials = ScopeClient::Credentials::ApiKey.new(
+        org_id: 'test_org',
+        api_key: 'test_key',
+        api_secret: nil
+      )
+      ScopeClient.configure { |c| c.credentials = credentials }
 
       expect { described_class.new }.to raise_error(ScopeClient::ConfigurationError, /api_secret is required/)
     end

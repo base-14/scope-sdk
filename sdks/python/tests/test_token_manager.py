@@ -6,18 +6,27 @@ from unittest.mock import patch
 import httpx
 import pytest
 
+from scope_client import ApiKeyCredentials
 from scope_client.configuration import Configuration
 from scope_client.errors import InvalidCredentialsError, TokenRefreshError
 from scope_client.token_manager import TokenManager
 
 
 @pytest.fixture
-def auth_config() -> Configuration:
-    """Provide a test configuration for auth tests."""
-    return Configuration(
+def auth_credentials() -> ApiKeyCredentials:
+    """Provide test credentials for auth tests."""
+    return ApiKeyCredentials(
         org_id="test_org",
         api_key="test_key",
         api_secret="test_secret",
+    )
+
+
+@pytest.fixture
+def auth_config(auth_credentials: ApiKeyCredentials) -> Configuration:
+    """Provide a test configuration for auth tests."""
+    return Configuration(
+        credentials=auth_credentials,
         auth_api_url="https://auth.test.scope.io",
         token_refresh_buffer=60,
     )

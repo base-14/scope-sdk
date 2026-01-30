@@ -32,10 +32,13 @@ RSpec.configure do |config|
 
   config.before do
     ScopeClient.reset_configuration!
+    credentials = ScopeClient::Credentials::ApiKey.new(
+      org_id: 'test_org',
+      api_key: 'test_api_key_12345',
+      api_secret: 'test_api_secret'
+    )
     ScopeClient.configure do |c|
-      c.org_id = 'test_org'
-      c.api_key = 'test_api_key_12345'
-      c.api_secret = 'test_api_secret'
+      c.credentials = credentials
       c.base_url = 'https://api.scope.io'
       c.auth_api_url = 'https://auth.scope.io'
     end

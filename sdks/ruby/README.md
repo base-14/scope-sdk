@@ -25,11 +25,18 @@ bundle install
 ```ruby
 require 'scope_client'
 
-# Configure globally (or use environment variables)
+# Create credentials from environment variables
+credentials = ScopeClient::Credentials::ApiKey.from_env
+# Or explicitly:
+# credentials = ScopeClient::Credentials::ApiKey.new(
+#   org_id: 'my-org',
+#   api_key: 'key_abc123',
+#   api_secret: 'secret_xyz'
+# )
+
+# Configure globally
 ScopeClient.configure do |config|
-  config.org_id = 'my-org'
-  config.api_key = 'key_abc123'
-  config.api_secret = 'secret_xyz'
+  config.credentials = credentials
 end
 
 # Create a client
@@ -48,6 +55,8 @@ puts rendered
 
 ### Environment Variables
 
+The SDK can load credentials from environment variables via `Credentials::ApiKey.from_env`:
+
 - `SCOPE_ORG_ID` - Your organization identifier (required)
 - `SCOPE_API_KEY` - Your API key ID (required)
 - `SCOPE_API_SECRET` - Your API key secret (required)
@@ -59,10 +68,16 @@ puts rendered
 ### Client Options
 
 ```ruby
+# Create credentials
+credentials = ScopeClient::Credentials::ApiKey.new(
+  org_id: 'my-org',
+  api_key: 'key_abc123',
+  api_secret: 'secret_xyz'
+)
+
+# Pass credentials via options
 client = ScopeClient.client(
-  org_id: 'my-org',            # Organization identifier
-  api_key: 'key_abc123',       # API key ID
-  api_secret: 'secret_xyz',    # API key secret
+  credentials: credentials,
   timeout: 60,                  # Request timeout (seconds)
   cache_enabled: true,          # Enable response caching
   cache_ttl: 300,              # Cache TTL (seconds)
@@ -73,10 +88,10 @@ client = ScopeClient.client(
 ### Global Configuration
 
 ```ruby
+credentials = ScopeClient::Credentials::ApiKey.from_env
+
 ScopeClient.configure do |config|
-  config.org_id = 'my-org'
-  config.api_key = 'key_abc123'
-  config.api_secret = 'secret_xyz'
+  config.credentials = credentials
   config.base_url = 'https://api.scope.io'
   config.auth_api_url = 'https://auth.scope.io'
   config.timeout = 30
@@ -223,7 +238,10 @@ ScopeClient::Middleware::Telemetry.on_error = ->(data) {
 require 'scope_client'
 require 'openai'
 
-# Credentials loaded from SCOPE_ORG_ID, SCOPE_API_KEY, SCOPE_API_SECRET env vars
+# Create credentials from environment
+credentials = ScopeClient::Credentials::ApiKey.from_env
+ScopeClient.configure { |c| c.credentials = credentials }
+
 scope = ScopeClient.client
 openai = OpenAI::Client.new
 
@@ -249,7 +267,10 @@ response = openai.chat(
 require 'scope_client'
 require 'anthropic'
 
-# Credentials loaded from SCOPE_ORG_ID, SCOPE_API_KEY, SCOPE_API_SECRET env vars
+# Create credentials from environment
+credentials = ScopeClient::Credentials::ApiKey.from_env
+ScopeClient.configure { |c| c.credentials = credentials }
+
 scope = ScopeClient.client
 anthropic = Anthropic::Client.new
 

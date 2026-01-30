@@ -4,7 +4,7 @@ This module provides the ScopeClient class, the main entry point
 for interacting with the Scope API.
 """
 
-from typing import Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
 
 from scope_client.cache import Cache
 from scope_client.configuration import Configuration, ConfigurationManager
@@ -12,6 +12,9 @@ from scope_client.connection import Connection
 from scope_client.errors import NoProductionVersionError, NotFoundError
 from scope_client.resources.prompt import Prompt
 from scope_client.resources.prompt_version import PromptVersion
+
+if TYPE_CHECKING:
+    from scope_client.credentials import Credentials
 
 T = TypeVar("T")
 
@@ -23,20 +26,30 @@ class ScopeClient:
     and rendering prompt templates with variables.
 
     Args:
+        credentials: Optional Credentials instance for authentication.
         config: Optional Configuration instance. If not provided,
             uses the global configuration.
+        base_url: Optional base URL override for the API.
         **options: Configuration options to merge with the base config.
 
     Example:
+        >>> # Using credentials directly
+        >>> from scope_client import ScopeClient, ApiKeyCredentials
+        >>> credentials = ApiKeyCredentials(
+        ...     org_id="my-org",
+        ...     api_key="key_abc123",
+        ...     api_secret="secret_xyz"
+        ... )
+        >>> client = ScopeClient(credentials=credentials)
+
+        >>> # Or with credentials from environment
+        >>> credentials = ApiKeyCredentials.from_env()
+        >>> client = ScopeClient(credentials=credentials)
+
         >>> # Using global configuration
         >>> import scope_client
-        >>> scope_client.configure(api_key="sk_test_123")
+        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
         >>> client = scope_client.client()
-
-        >>> # Or with explicit configuration
-        >>> from scope_client import ScopeClient, Configuration
-        >>> config = Configuration(api_key="sk_test_123")
-        >>> client = ScopeClient(config)
 
         >>> # Fetch a prompt
         >>> prompt = client.get_prompt("my-prompt")
@@ -49,15 +62,25 @@ class ScopeClient:
 
     def __init__(
         self,
+        credentials: Optional["Credentials"] = None,
         config: Optional[Configuration] = None,
+        base_url: Optional[str] = None,
         **options: Any,
     ) -> None:
         # Get base configuration
         base_config = config if config is not None else ConfigurationManager.get()
 
+        # Build options dict with credentials and base_url if provided
+        merged_options: dict[str, Any] = {}
+        if credentials is not None:
+            merged_options["credentials"] = credentials
+        if base_url is not None:
+            merged_options["base_url"] = base_url
+        merged_options.update(options)
+
         # Merge any additional options
-        if options:
-            self._config = base_config.merge(**options)
+        if merged_options:
+            self._config = base_config.merge(**merged_options)
         else:
             self._config = base_config
 

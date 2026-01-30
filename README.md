@@ -22,6 +22,36 @@ Scope SDKs provide read-only access to the Scope Platform, enabling you to:
 
 ## Quick Start
 
+### Python
+
+Install from git (not yet published to PyPI):
+
+```bash
+pip install git+https://github.com/base14/scope-sdk.git#subdirectory=sdks/python
+```
+
+```python
+from scope_client import ScopeClient, ApiKeyCredentials
+
+# Create credentials from environment variables
+credentials = ApiKeyCredentials.from_env()
+# Or explicitly:
+# credentials = ApiKeyCredentials(
+#     org_id="my-org",
+#     api_key="key_abc123",
+#     api_secret="secret_xyz"
+# )
+
+# Create a client
+client = ScopeClient(credentials=credentials)
+
+# Fetch and render a prompt
+rendered = client.render_prompt('my-prompt', {
+    'customer_name': 'Alice',
+    'product': 'Widget'
+})
+```
+
 ### Ruby
 
 Add to your Gemfile (not yet published to RubyGems):
@@ -33,11 +63,18 @@ gem 'scope-client', git: 'https://github.com/base14/scope-sdk.git', glob: 'sdks/
 ```ruby
 require 'scope_client'
 
-# Configure with credentials
+# Create credentials from environment variables
+credentials = ScopeClient::Credentials::ApiKey.from_env
+# Or explicitly:
+# credentials = ScopeClient::Credentials::ApiKey.new(
+#   org_id: 'my-org',
+#   api_key: 'key_abc123',
+#   api_secret: 'secret_xyz'
+# )
+
+# Configure globally
 ScopeClient.configure do |config|
-  config.org_id = ENV['SCOPE_ORG_ID']
-  config.api_key = ENV['SCOPE_API_KEY']
-  config.api_secret = ENV['SCOPE_API_SECRET']
+  config.credentials = credentials
 end
 
 # Fetch and render a prompt
@@ -48,45 +85,29 @@ rendered = client.render_prompt('my-prompt', {
 })
 ```
 
-### Python
-
-Install from git (not yet published to PyPI):
-
-```bash
-pip install git+https://github.com/base14/scope-sdk.git#subdirectory=sdks/python
-```
-
-```python
-import scope_client
-
-# Configure with credentials
-scope_client.configure(
-    org_id="my-org",
-    api_key="key_abc123",
-    api_secret="secret_xyz"
-)
-
-# Fetch and render a prompt
-client = scope_client.client()
-rendered = client.render_prompt('my-prompt', {
-    'customer_name': 'Alice',
-    'product': 'Widget'
-})
-```
-
 ## Authentication
 
-All SDKs use JWT-based authentication. Credentials are exchanged for a JWT token which is automatically managed and refreshed by the SDK.
+All SDKs use JWT-based authentication with an extensible credentials system. The primary authentication method uses API key credentials.
 
-Authentication requires three credentials:
+### Credentials
+
+Authentication requires three values:
 
 1. **Organization ID** (`SCOPE_ORG_ID`): Your organization identifier
 2. **API Key** (`SCOPE_API_KEY`): Your API key ID
 3. **API Secret** (`SCOPE_API_SECRET`): Your API key secret
 
-These can be set via environment variables (recommended) or passed directly during configuration.
+These can be loaded from environment variables using `ApiKeyCredentials.from_env()` (Python) or `Credentials::ApiKey.from_env` (Ruby), or passed directly when creating credentials.
 
 Generate API keys from the Scope UI under Settings > Applications.
+
+### Environment Variables
+
+```bash
+export SCOPE_ORG_ID="my-org"
+export SCOPE_API_KEY="key_abc123"
+export SCOPE_API_SECRET="secret_xyz"
+```
 
 ## Documentation
 

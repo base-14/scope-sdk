@@ -5,7 +5,13 @@ from typing import Any
 import pytest
 from pytest_httpx import HTTPXMock
 
-from scope_client import Configuration, ScopeClient, configure, reset_configuration
+from scope_client import (
+    ApiKeyCredentials,
+    Configuration,
+    ScopeClient,
+    configure,
+    reset_configuration,
+)
 from scope_client.errors import (
     AuthenticationError,
     ConfigurationError,
@@ -21,23 +27,30 @@ class TestScopeClientInit:
 
     def test_init_with_config(self, config: Configuration):
         """Test initialization with explicit configuration."""
-        client = ScopeClient(config)
-        assert client.config.api_key == config.api_key
+        client = ScopeClient(config=config)
+        assert client.config.credentials is not None
+        assert client.config.credentials.api_key == config.credentials.api_key
 
-    def test_init_with_global_config(self, org_id: str, api_key: str, api_secret: str):
+    def test_init_with_credentials(self, credentials: ApiKeyCredentials):
+        """Test initialization with credentials directly."""
+        client = ScopeClient(credentials=credentials)
+        assert client.config.credentials.api_key == credentials.api_key
+        assert client.config.credentials.org_id == credentials.org_id
+
+    def test_init_with_global_config(self, credentials: ApiKeyCredentials):
         """Test initialization with global configuration."""
-        configure(org_id=org_id, api_key=api_key, api_secret=api_secret)
+        configure(credentials=credentials)
         client = ScopeClient()
-        assert client.config.api_key == api_key
-        assert client.config.org_id == org_id
+        assert client.config.credentials.api_key == credentials.api_key
+        assert client.config.credentials.org_id == credentials.org_id
 
     def test_init_with_options_override(self, config: Configuration):
         """Test initialization with options overriding config."""
-        client = ScopeClient(config, timeout=120)
+        client = ScopeClient(config=config, timeout=120)
         assert client.config.timeout == 120
-        assert client.config.api_key == config.api_key  # Original preserved
+        assert client.config.credentials.api_key == config.credentials.api_key
 
-    def test_init_without_api_key_raises(self):
+    def test_init_without_credentials_raises(self):
         """Test initialization without credentials raises error."""
         reset_configuration()
         with pytest.raises(ConfigurationError):
@@ -45,23 +58,21 @@ class TestScopeClientInit:
 
     def test_cache_enabled_by_default(self, config: Configuration):
         """Test cache is enabled by default."""
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         assert client._cache is not None
 
-    def test_cache_disabled(self, org_id: str, api_key: str, api_secret: str):
+    def test_cache_disabled(self, credentials: ApiKeyCredentials):
         """Test cache can be disabled."""
         config = Configuration(
-            org_id=org_id,
-            api_key=api_key,
-            api_secret=api_secret,
+            credentials=credentials,
             cache_enabled=False,
         )
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         assert client._cache is None
 
     def test_repr(self, config: Configuration):
         """Test string representation."""
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         repr_str = repr(client)
         assert "ScopeClient" in repr_str
         assert "api.test.scope.io" in repr_str
@@ -80,7 +91,7 @@ class TestScopeClientGetPrompt:
         """Test successful prompt fetch."""
         httpx_mock.add_response(json=mock_prompt_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         prompt = client.get_prompt("prompt-123")
 
         assert isinstance(prompt, Prompt)
@@ -98,7 +109,7 @@ class TestScopeClientGetPrompt:
             json={"error": {"message": "Prompt not found"}},
         )
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         with pytest.raises(NotFoundError):
             client.get_prompt("nonexistent")
 
@@ -113,7 +124,7 @@ class TestScopeClientGetPrompt:
             json={"error": {"message": "Invalid API key"}},
         )
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         with pytest.raises(AuthenticationError):
             client.get_prompt("prompt-123")
 
@@ -126,7 +137,7 @@ class TestScopeClientGetPrompt:
         """Test that prompts are cached."""
         httpx_mock.add_response(json=mock_prompt_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
 
         # First call
         prompt1 = client.get_prompt("prompt-123")
@@ -146,7 +157,7 @@ class TestScopeClientGetPrompt:
         httpx_mock.add_response(json=mock_prompt_response)
         httpx_mock.add_response(json=mock_prompt_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
 
         client.get_prompt("prompt-123")
         client.get_prompt("prompt-123", cache=False)
@@ -166,7 +177,7 @@ class TestScopeClientGetPromptVersion:
         """Test getting latest version."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         version = client.get_prompt_latest("prompt-123")
 
         assert isinstance(version, PromptVersion)
@@ -186,7 +197,7 @@ class TestScopeClientGetPromptVersion:
         """Test getting production version."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         version = client.get_prompt_production("prompt-123")
 
         assert isinstance(version, PromptVersion)
@@ -206,7 +217,7 @@ class TestScopeClientGetPromptVersion:
             json={"error": {"message": "No production version"}},
         )
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         with pytest.raises(NoProductionVersionError) as exc_info:
             client.get_prompt_production("prompt-123")
 
@@ -221,7 +232,7 @@ class TestScopeClientGetPromptVersion:
         """Test getting specific version."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         version = client.get_prompt_version("prompt-123", "version-456")
 
         assert version.id == "version-456"
@@ -242,7 +253,7 @@ class TestScopeClientListPrompts:
         """Test listing prompts."""
         httpx_mock.add_response(json=mock_list_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         result = client.list_prompts()
 
         assert "data" in result
@@ -260,7 +271,7 @@ class TestScopeClientListPrompts:
         """Test listing prompts with query parameters."""
         httpx_mock.add_response(json=mock_list_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         client.list_prompts(page=2, per_page=10)
 
         request = httpx_mock.get_requests()[0]
@@ -280,7 +291,7 @@ class TestScopeClientRenderPrompt:
         """Test rendering production version."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         rendered = client.render_prompt(
             "prompt-123",
             {"name": "Alice", "app": "Scope"},
@@ -298,7 +309,7 @@ class TestScopeClientRenderPrompt:
         """Test rendering latest version."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         rendered = client.render_prompt(
             "prompt-123",
             {"name": "Bob", "app": "Test"},
@@ -316,7 +327,7 @@ class TestScopeClientRenderPrompt:
         """Test rendering specific version."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         rendered = client.render_prompt(
             "prompt-123",
             {"name": "Charlie", "app": "Demo"},
@@ -334,7 +345,7 @@ class TestScopeClientRenderPrompt:
         """Test error when variable is missing."""
         httpx_mock.add_response(json=mock_version_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         with pytest.raises(MissingVariableError):
             client.render_prompt("prompt-123", {"name": "Alice"})
 
@@ -352,7 +363,7 @@ class TestScopeClientClearCache:
         httpx_mock.add_response(json=mock_prompt_response)
         httpx_mock.add_response(json=mock_prompt_response)
 
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
 
         client.get_prompt("prompt-123")
         client.clear_cache()
@@ -361,15 +372,13 @@ class TestScopeClientClearCache:
         # Two requests because cache was cleared
         assert len(httpx_mock.get_requests()) == 2
 
-    def test_clear_cache_disabled(self, org_id: str, api_key: str, api_secret: str):
+    def test_clear_cache_disabled(self, credentials: ApiKeyCredentials):
         """Test clear_cache with disabled cache doesn't error."""
         config = Configuration(
-            org_id=org_id,
-            api_key=api_key,
-            api_secret=api_secret,
+            credentials=credentials,
             cache_enabled=False,
         )
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         client.clear_cache()  # Should not raise
 
 
@@ -378,7 +387,7 @@ class TestScopeClientContextManager:
 
     def test_context_manager(self, config: Configuration):
         """Test using client as context manager."""
-        with ScopeClient(config) as client:
+        with ScopeClient(config=config) as client:
             assert client._connection._client is None  # Lazy init
 
         # After exiting context, client should be cleaned up
@@ -386,6 +395,6 @@ class TestScopeClientContextManager:
 
     def test_close(self, config: Configuration):
         """Test explicit close."""
-        client = ScopeClient(config)
+        client = ScopeClient(config=config)
         client.close()
         # Should be able to close without error

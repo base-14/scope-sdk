@@ -17,17 +17,19 @@ pip install git+https://github.com/base14/scope-sdk.git#subdirectory=sdks/python
 ## Quick Start
 
 ```python
-import scope_client
+from scope_client import ScopeClient, ApiKeyCredentials
 
-# Configure with your credentials
-scope_client.configure(
-    org_id="my-org",
-    api_key="key_abc123",
-    api_secret="secret_xyz"
-)
+# Create credentials from environment variables
+credentials = ApiKeyCredentials.from_env()
+# Or explicitly:
+# credentials = ApiKeyCredentials(
+#     org_id="my-org",
+#     api_key="key_abc123",
+#     api_secret="secret_xyz"
+# )
 
 # Create a client
-client = scope_client.client()
+client = ScopeClient(credentials=credentials)
 
 # Fetch and render a prompt
 version = client.get_prompt_production("greeting")
@@ -39,7 +41,7 @@ print(rendered)  # "Hello, Alice!"
 
 ### Environment Variables
 
-The SDK automatically reads from environment variables:
+The SDK can load credentials from environment variables via `ApiKeyCredentials.from_env()`:
 
 ```bash
 export SCOPE_ORG_ID="my-org"
@@ -54,39 +56,45 @@ export SCOPE_TOKEN_REFRESH_BUFFER="60"             # Optional
 ### Programmatic Configuration
 
 ```python
-import scope_client
+from scope_client import ScopeClient, ApiKeyCredentials, Configuration
 
-# Global configuration
-scope_client.configure(
+# Create credentials
+credentials = ApiKeyCredentials(
     org_id="my-org",
     api_key="key_abc123",
-    api_secret="secret_xyz",
+    api_secret="secret_xyz"
+)
+
+# Option 1: Pass credentials directly to client
+client = ScopeClient(credentials=credentials)
+
+# Option 2: Use Configuration object
+config = Configuration(
+    credentials=credentials,
     base_url="https://api.scope.io",
     cache_enabled=True,
     cache_ttl=300,  # 5 minutes
     timeout=30,
     max_retries=3,
 )
+client = ScopeClient(config=config)
 
-# Or per-client configuration
-from scope_client import Configuration, ScopeClient
+# Option 3: Global configuration
+import scope_client
 
-config = Configuration(
-    org_id="my-org",
-    api_key="key_abc123",
-    api_secret="secret_xyz",
-    cache_enabled=False,
+scope_client.configure(
+    credentials=ApiKeyCredentials.from_env(),
+    cache_enabled=True,
+    cache_ttl=600
 )
-client = ScopeClient(config)
+client = scope_client.client()
 ```
 
 ### Configuration Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `org_id` | str | None | Organization identifier (required) |
-| `api_key` | str | None | API key ID (required) |
-| `api_secret` | str | None | API key secret (required) |
+| `credentials` | Credentials | None | Credentials instance for authentication (required) |
 | `base_url` | str | `https://api.scope.io` | API base URL |
 | `auth_api_url` | str | `https://auth.scope.io` | Auth API URL for token exchange |
 | `api_version` | str | `v1` | API version |
@@ -106,9 +114,10 @@ client = ScopeClient(config)
 ### Fetching Prompts
 
 ```python
-import scope_client
+from scope_client import ScopeClient, ApiKeyCredentials
 
-client = scope_client.client()
+credentials = ApiKeyCredentials.from_env()
+client = ScopeClient(credentials=credentials)
 
 # Get a prompt
 prompt = client.get_prompt("my-prompt")
@@ -233,7 +242,10 @@ Telemetry.on_error(log_error)
 The client can be used as a context manager for automatic cleanup:
 
 ```python
-with scope_client.client() as client:
+from scope_client import ScopeClient, ApiKeyCredentials
+
+credentials = ApiKeyCredentials.from_env()
+with ScopeClient(credentials=credentials) as client:
     prompt = client.get_prompt("my-prompt")
     # Connection is automatically closed when exiting the context
 ```

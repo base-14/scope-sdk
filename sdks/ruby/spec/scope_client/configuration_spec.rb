@@ -24,6 +24,11 @@ RSpec.describe ScopeClient::Configuration do
       expect(config.telemetry_enabled).to be(true)
     end
 
+    it 'sets default credentials to nil' do
+      new_config = described_class.new
+      expect(new_config.credentials).to be_nil
+    end
+
     it 'accepts custom options' do
       custom_config = described_class.new(timeout: 60, cache_ttl: 600)
 
@@ -31,20 +36,16 @@ RSpec.describe ScopeClient::Configuration do
       expect(custom_config.cache_ttl).to eq(600)
     end
 
-    it 'loads credentials from environment' do
-      allow(ENV).to receive(:fetch).with('SCOPE_ORG_ID', nil).and_return('env_org_id')
-      allow(ENV).to receive(:fetch).with('SCOPE_API_KEY', nil).and_return('env_api_key')
-      allow(ENV).to receive(:fetch).with('SCOPE_API_SECRET', nil).and_return('env_api_secret')
-      allow(ENV).to receive(:fetch).with('SCOPE_API_URL', anything).and_call_original
-      allow(ENV).to receive(:fetch).with('SCOPE_AUTH_API_URL', anything).and_call_original
-      allow(ENV).to receive(:fetch).with('SCOPE_ENVIRONMENT', anything).and_call_original
-      allow(ENV).to receive(:fetch).with('SCOPE_TOKEN_REFRESH_BUFFER', anything).and_call_original
+    it 'accepts credentials option' do
+      credentials = ScopeClient::Credentials::ApiKey.new(
+        org_id: 'test_org',
+        api_key: 'test_key',
+        api_secret: 'test_secret'
+      )
+      custom_config = described_class.new(credentials: credentials)
 
-      new_config = described_class.new
-
-      expect(new_config.org_id).to eq('env_org_id')
-      expect(new_config.api_key).to eq('env_api_key')
-      expect(new_config.api_secret).to eq('env_api_secret')
+      expect(custom_config.credentials).to eq(credentials)
+      expect(custom_config.credentials.org_id).to eq('test_org')
     end
 
     it 'sets default auth_api_url and token_refresh_buffer' do
@@ -76,6 +77,54 @@ RSpec.describe ScopeClient::Configuration do
       expect(hash).to be_a(Hash)
       expect(hash[:timeout]).to eq(30)
       expect(hash[:cache_enabled]).to be(true)
+    end
+
+    it 'includes credentials as hash when present' do
+      credentials = ScopeClient::Credentials::ApiKey.new(
+        org_id: 'test_org',
+        api_key: 'test_key',
+        api_secret: 'test_secret'
+      )
+      config_with_creds = described_class.new(credentials: credentials)
+      hash = config_with_creds.to_h
+
+      expect(hash[:credentials]).to be_a(Hash)
+      expect(hash[:credentials][:org_id]).to eq('test_org')
+      expect(hash[:credentials][:api_secret]).to eq('[REDACTED]')
+    end
+  end
+
+  describe '#validate!' do
+    context 'when credentials is nil' do
+      it 'raises ConfigurationError' do
+        expect { config.validate! }.to raise_error(ScopeClient::ConfigurationError, /credentials is required/)
+      end
+    end
+
+    context 'when credentials is valid' do
+      it 'does not raise' do
+        credentials = ScopeClient::Credentials::ApiKey.new(
+          org_id: 'test_org',
+          api_key: 'test_key',
+          api_secret: 'test_secret'
+        )
+        valid_config = described_class.new(credentials: credentials)
+
+        expect { valid_config.validate! }.not_to raise_error
+      end
+    end
+
+    context 'when credentials is incomplete' do
+      it 'raises ConfigurationError for missing org_id' do
+        credentials = ScopeClient::Credentials::ApiKey.new(
+          org_id: nil,
+          api_key: 'test_key',
+          api_secret: 'test_secret'
+        )
+        invalid_config = described_class.new(credentials: credentials)
+
+        expect { invalid_config.validate! }.to raise_error(ScopeClient::ConfigurationError, /org_id is required/)
+      end
     end
   end
 end

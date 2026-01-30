@@ -32,15 +32,17 @@ class TokenManager:
     Thread-safe for concurrent access.
 
     Args:
-        config: Configuration instance with auth settings.
+        config: Configuration instance with credentials.
 
     Example:
+        >>> from scope_client import ApiKeyCredentials
         >>> from scope_client.configuration import Configuration
-        >>> config = Configuration(
+        >>> credentials = ApiKeyCredentials(
         ...     org_id="my-org",
         ...     api_key="key_abc123",
         ...     api_secret="secret_xyz"
         ... )
+        >>> config = Configuration(credentials=credentials)
         >>> token_manager = TokenManager(config)
         >>> token = token_manager.get_access_token()
     """
@@ -84,6 +86,7 @@ class TokenManager:
             InvalidCredentialsError: If credentials are invalid.
         """
         url = f"{self._config.auth_api_url}/v1/auth/sdk-token"
+        credentials = self._config.credentials
 
         try:
             with httpx.Client(
@@ -95,9 +98,9 @@ class TokenManager:
                 response = client.post(
                     url,
                     json={
-                        "account_id": self._config.org_id,
-                        "key_id": self._config.api_key,
-                        "key_secret": self._config.api_secret,
+                        "account_id": credentials.org_id,
+                        "key_id": credentials.api_key,
+                        "key_secret": credentials.api_secret,
                     },
                     headers={
                         "Content-Type": "application/json",

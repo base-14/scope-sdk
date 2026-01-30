@@ -37,13 +37,14 @@ module ScopeClient
     end
 
     def fetch_token
+      credentials = @config.credentials
       response = auth_connection.post('/v1/auth/sdk-token') do |req|
         req.headers['Content-Type'] = 'application/json'
         req.headers['Accept'] = 'application/json'
         req.body = JSON.generate(
-          account_id: @config.org_id,
-          key_id: @config.api_key,
-          key_secret: @config.api_secret
+          account_id: credentials.org_id,
+          key_id: credentials.api_key,
+          key_secret: credentials.api_secret
         )
       end
 

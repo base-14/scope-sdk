@@ -3,11 +3,17 @@
 RSpec.describe ScopeClient::TokenManager do
   subject(:token_manager) { described_class.new(config) }
 
-  let(:config) do
-    ScopeClient::Configuration.new(
+  let(:credentials) do
+    ScopeClient::Credentials::ApiKey.new(
       org_id: 'test_org',
       api_key: 'test_key',
-      api_secret: 'test_secret',
+      api_secret: 'test_secret'
+    )
+  end
+
+  let(:config) do
+    ScopeClient::Configuration.new(
+      credentials: credentials,
       auth_api_url: 'https://auth.scope.io',
       token_refresh_buffer: 60
     )
