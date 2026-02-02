@@ -87,6 +87,7 @@ class TokenManager:
         """
         url = f"{self._config.auth_api_url}/v1/auth/sdk-token"
         credentials = self._config.credentials
+        assert credentials is not None, "Credentials must be set before fetching token"
 
         try:
             with httpx.Client(
