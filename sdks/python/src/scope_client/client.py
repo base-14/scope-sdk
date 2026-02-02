@@ -57,7 +57,7 @@ class ScopeClient:
 
         >>> # Get production version and render
         >>> version = client.get_prompt_production("my-prompt")
-        >>> rendered = version.render({"name": "Alice"})
+        >>> rendered = version.render(name="Alice")
     """
 
     def __init__(
@@ -325,7 +325,7 @@ class ScopeClient:
             prompt_version = self.get_prompt_version(prompt_id, version, **options)
 
         # Render and return
-        return prompt_version.render(variables)
+        return prompt_version.render(**variables)
 
     def clear_cache(self) -> None:
         """Clear all cached responses.

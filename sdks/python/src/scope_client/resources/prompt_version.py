@@ -40,7 +40,7 @@ class PromptVersion(Resource):
         'Hello, {{name}}! Welcome to {{app}}.'
         >>> version.variables
         ['name', 'app']
-        >>> rendered = version.render({"name": "Alice", "app": "Scope"})
+        >>> rendered = version.render(name="Alice", app="Scope")
         >>> rendered
         'Hello, Alice! Welcome to Scope.'
     """
@@ -71,14 +71,14 @@ class PromptVersion(Resource):
         if not hasattr(self, "content"):
             self.content = ""
 
-    def render(self, variables: Optional[dict[str, str]] = None) -> str:
+    def render(self, **variables: str) -> str:
         """Render the prompt content with provided variables.
 
         Substitutes all {{variable}} placeholders in the content with
-        the corresponding values from the provided dictionary.
+        the corresponding values from the provided keyword arguments.
 
         Args:
-            variables: Dictionary mapping variable names to values.
+            **variables: Keyword arguments mapping variable names to values.
                 All values are converted to strings.
 
         Returns:
@@ -90,14 +90,14 @@ class PromptVersion(Resource):
 
         Example:
             >>> version = client.get_prompt_production("greeting")
-            >>> version.render({"name": "Alice", "greeting": "Hello"})
+            >>> version.render(name="Alice", greeting="Hello")
             'Hello, Alice!'
         """
         renderer = Renderer(
             content=self.content,
             declared_variables=self.variables,
         )
-        return renderer.render(variables or {})
+        return renderer.render(**variables)
 
     @property
     def is_draft(self) -> bool:

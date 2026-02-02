@@ -12,37 +12,37 @@ class TestRenderer:
     def test_simple_render(self):
         """Test simple variable substitution."""
         renderer = Renderer("Hello, {{name}}!")
-        result = renderer.render({"name": "World"})
+        result = renderer.render(name="World")
         assert result == "Hello, World!"
 
     def test_multiple_variables(self):
         """Test multiple variable substitution."""
         renderer = Renderer("Hello, {{name}}! Welcome to {{app}}.")
-        result = renderer.render({"name": "Alice", "app": "Scope"})
+        result = renderer.render(name="Alice", app="Scope")
         assert result == "Hello, Alice! Welcome to Scope."
 
     def test_repeated_variable(self):
         """Test same variable used multiple times."""
         renderer = Renderer("{{name}} says hello. {{name}} is here.")
-        result = renderer.render({"name": "Bob"})
+        result = renderer.render(name="Bob")
         assert result == "Bob says hello. Bob is here."
 
     def test_no_variables(self):
         """Test content with no variables."""
         renderer = Renderer("Hello, World!")
-        result = renderer.render({})
+        result = renderer.render()
         assert result == "Hello, World!"
 
     def test_empty_values(self):
         """Test rendering with empty string value."""
         renderer = Renderer("Hello, {{name}}!")
-        result = renderer.render({"name": ""})
+        result = renderer.render(name="")
         assert result == "Hello, !"
 
     def test_numeric_values(self):
         """Test rendering with numeric values."""
         renderer = Renderer("You have {{count}} messages.")
-        result = renderer.render({"count": "42"})
+        result = renderer.render(count="42")
         assert result == "You have 42 messages."
 
     def test_variables_property(self):
@@ -63,17 +63,17 @@ class TestRenderer:
         renderer = Renderer(template)
         assert renderer.content == template
 
-    def test_render_with_none_values(self):
-        """Test render with None as values dict."""
+    def test_render_with_no_args(self):
+        """Test render with no arguments."""
         renderer = Renderer("Hello, World!")
-        result = renderer.render(None)
+        result = renderer.render()
         assert result == "Hello, World!"
 
     def test_missing_variable_error(self):
         """Test error when required variable is missing."""
         renderer = Renderer("Hello, {{name}}!")
         with pytest.raises(MissingVariableError) as exc_info:
-            renderer.render({})
+            renderer.render()
 
         assert "name" in exc_info.value.missing_variables
 
@@ -81,7 +81,7 @@ class TestRenderer:
         """Test error lists all missing variables."""
         renderer = Renderer("{{greeting}}, {{name}}!")
         with pytest.raises(MissingVariableError) as exc_info:
-            renderer.render({})
+            renderer.render()
 
         assert set(exc_info.value.missing_variables) == {"greeting", "name"}
 
@@ -89,7 +89,7 @@ class TestRenderer:
         """Test error when some variables are missing."""
         renderer = Renderer("{{greeting}}, {{name}}!")
         with pytest.raises(MissingVariableError) as exc_info:
-            renderer.render({"greeting": "Hello"})
+            renderer.render(greeting="Hello")
 
         assert "name" in exc_info.value.missing_variables
         assert "greeting" not in exc_info.value.missing_variables
@@ -104,7 +104,7 @@ class TestRendererWithDeclaredVariables:
             "Hello, {{name}}!",
             declared_variables=["name"],
         )
-        result = renderer.render({"name": "World"})
+        result = renderer.render(name="World")
         assert result == "Hello, World!"
 
     def test_unknown_variable_error(self):
@@ -114,7 +114,7 @@ class TestRendererWithDeclaredVariables:
             declared_variables=["name"],
         )
         with pytest.raises(ValidationError) as exc_info:
-            renderer.render({"name": "World", "unknown": "value"})
+            renderer.render(name="World", unknown="value")
 
         assert "Unknown variables" in str(exc_info.value)
         assert "unknown" in str(exc_info.value)
@@ -126,7 +126,7 @@ class TestRendererWithDeclaredVariables:
             declared_variables=["name"],
         )
         with pytest.raises(ValidationError) as exc_info:
-            renderer.render({"name": "World", "foo": "1", "bar": "2"})
+            renderer.render(name="World", foo="1", bar="2")
 
         error_str = str(exc_info.value)
         assert "foo" in error_str
@@ -137,7 +137,7 @@ class TestRendererWithDeclaredVariables:
         renderer = Renderer("Hello!", declared_variables=[])
         # Should fail because "name" is not declared
         with pytest.raises(ValidationError):
-            renderer.render({"name": "World"})
+            renderer.render(name="World")
 
     def test_extra_declared_variables_ok(self):
         """Test that having declared but unused variables is OK."""
@@ -145,7 +145,7 @@ class TestRendererWithDeclaredVariables:
             "Hello, {{name}}!",
             declared_variables=["name", "unused"],
         )
-        result = renderer.render({"name": "World"})
+        result = renderer.render(name="World")
         assert result == "Hello, World!"
 
 
@@ -154,21 +154,21 @@ class TestRenderTemplate:
 
     def test_basic_render(self):
         """Test basic template rendering."""
-        result = render_template("Hello, {{name}}!", {"name": "World"})
+        result = render_template("Hello, {{name}}!", name="World")
         assert result == "Hello, World!"
 
     def test_with_declared_variables(self):
         """Test with declared variables."""
         result = render_template(
             "Hello, {{name}}!",
-            {"name": "World"},
             declared_variables=["name"],
+            name="World",
         )
         assert result == "Hello, World!"
 
-    def test_none_values(self):
-        """Test with None values."""
-        result = render_template("Hello, World!", None)
+    def test_no_values(self):
+        """Test with no values."""
+        result = render_template("Hello, World!")
         assert result == "Hello, World!"
 
 

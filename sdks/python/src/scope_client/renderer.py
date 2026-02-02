@@ -26,7 +26,7 @@ class Renderer:
 
     Example:
         >>> renderer = Renderer("Hello, {{name}}!")
-        >>> renderer.render({"name": "World"})
+        >>> renderer.render(name="World")
         'Hello, World!'
 
         >>> # With declared variables
@@ -34,7 +34,7 @@ class Renderer:
         ...     "Hello, {{name}}!",
         ...     declared_variables=["name"]
         ... )
-        >>> renderer.render({"name": "World", "unknown": "value"})
+        >>> renderer.render(name="World", unknown="value")
         ValidationError: Unknown variables: unknown
     """
 
@@ -62,14 +62,14 @@ class Renderer:
         """
         return list(set(VARIABLE_PATTERN.findall(self._content)))
 
-    def render(self, values: Optional[dict[str, str]] = None) -> str:
+    def render(self, **values: str) -> str:
         """Render the template with provided values.
 
         Substitutes all {{variable}} placeholders with corresponding values
-        from the provided dictionary.
+        from the provided keyword arguments.
 
         Args:
-            values: Dictionary mapping variable names to their values.
+            **values: Keyword arguments mapping variable names to their values.
                 All values will be converted to strings.
 
         Returns:
@@ -81,10 +81,9 @@ class Renderer:
 
         Example:
             >>> renderer = Renderer("Hello, {{name}}! You have {{count}} messages.")
-            >>> renderer.render({"name": "Alice", "count": "5"})
+            >>> renderer.render(name="Alice", count="5")
             'Hello, Alice! You have 5 messages.'
         """
-        values = values or {}
 
         # Validate provided variables against declared variables
         self._validate_variables(values)
@@ -140,25 +139,25 @@ class Renderer:
 
 def render_template(
     content: str,
-    values: Optional[dict[str, str]] = None,
     declared_variables: Optional[list[str]] = None,
+    **values: str,
 ) -> str:
     """Convenience function to render a template.
 
     Args:
         content: Template content with {{variable}} placeholders.
-        values: Dictionary mapping variable names to values.
         declared_variables: Optional list of declared variables for validation.
+        **values: Keyword arguments mapping variable names to values.
 
     Returns:
         Rendered template string.
 
     Example:
-        >>> render_template("Hello, {{name}}!", {"name": "World"})
+        >>> render_template("Hello, {{name}}!", name="World")
         'Hello, World!'
     """
     renderer = Renderer(content, declared_variables)
-    return renderer.render(values)
+    return renderer.render(**values)
 
 
 def extract_variables(content: str) -> list[str]:

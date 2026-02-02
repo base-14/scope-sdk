@@ -33,7 +33,7 @@ client = ScopeClient(credentials=credentials)
 
 # Fetch and render a prompt by name (or use prompt ID like "prompt_01HXYZ...")
 version = client.get_prompt_production("greeting-template")
-rendered = version.render({"name": "Alice"})
+rendered = version.render(name="Alice")
 print(rendered)  # "Hello, Alice!"
 ```
 
@@ -146,10 +146,7 @@ specific = client.get_prompt_version("my-greeting-prompt", "version-123")
 ```python
 # Render via the version object (using prompt name)
 version = client.get_prompt_production("greeting-template")
-rendered = version.render({
-    "name": "Alice",
-    "time_of_day": "morning",
-})
+rendered = version.render(name="Alice", time_of_day="morning")
 print(rendered)  # "Good morning, Alice!"
 
 # Or render directly via the client (works with name or ID)

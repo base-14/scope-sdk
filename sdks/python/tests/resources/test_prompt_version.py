@@ -218,7 +218,7 @@ class TestPromptVersion:
     def test_render(self, prompt_version_data: dict[str, Any]):
         """Test rendering prompt version."""
         version = PromptVersion(prompt_version_data)
-        rendered = version.render({"name": "Alice", "app": "Scope"})
+        rendered = version.render(name="Alice", app="Scope")
 
         assert rendered == "Hello, Alice! Welcome to Scope."
 
@@ -227,14 +227,14 @@ class TestPromptVersion:
         version = PromptVersion(prompt_version_data)
 
         with pytest.raises(MissingVariableError):
-            version.render({"name": "Alice"})
+            version.render(name="Alice")
 
     def test_render_unknown_variable(self, prompt_version_data: dict[str, Any]):
         """Test render with unknown variable."""
         version = PromptVersion(prompt_version_data)
 
         with pytest.raises(ValidationError):
-            version.render({"name": "Alice", "app": "Scope", "extra": "value"})
+            version.render(name="Alice", app="Scope", extra="value")
 
     def test_is_draft(self):
         """Test is_draft property."""
