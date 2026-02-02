@@ -42,8 +42,8 @@ end
 # Create a client
 client = ScopeClient.client
 
-# Get and render a production prompt
-rendered = client.render_prompt('my-prompt-id', {
+# Get and render a production prompt by name (or use prompt ID like "prompt_01HXYZ...")
+rendered = client.render_prompt('my-greeting-prompt', {
   user_name: 'Alice',
   product: 'Widget'
 })
@@ -107,18 +107,23 @@ end
 
 ### Fetching Prompts
 
+All prompt methods accept either a prompt ID (e.g., `prompt_01HXYZ...`) or a prompt name. The API auto-detects: if the value starts with `prompt_` and is a valid ULID, it's treated as an ID; otherwise, it's treated as a name.
+
 ```ruby
-# Get production version (recommended for production use)
-prompt = client.get_prompt_production('prompt-id')
+# Get production version by name (recommended for production use)
+prompt = client.get_prompt_production('my-greeting-prompt')
+
+# Or by ID
+prompt = client.get_prompt_production('prompt_01HXYZ...')
 
 # Get latest version (may be draft)
-prompt = client.get_prompt_latest('prompt-id')
+prompt = client.get_prompt_latest('my-greeting-prompt')
 
 # Get specific version
-prompt = client.get_prompt_version('prompt-id', 'version-id')
+prompt = client.get_prompt_version('my-greeting-prompt', 'version-id')
 
 # Get prompt metadata
-prompt = client.get_prompt('prompt-id')
+prompt = client.get_prompt('my-greeting-prompt')
 
 # List prompts with filters
 results = client.list_prompts(
@@ -132,17 +137,17 @@ results = client.list_prompts(
 ### Rendering Prompts
 
 ```ruby
-# Render with production version (default)
-text = client.render_prompt('prompt-id', { name: 'Alice' })
+# Render with production version using prompt name (default)
+text = client.render_prompt('greeting-template', { name: 'Alice' })
 
 # Render with latest version
-text = client.render_prompt('prompt-id', { name: 'Alice' }, version: :latest)
+text = client.render_prompt('greeting-template', { name: 'Alice' }, version: :latest)
 
 # Render specific version
-text = client.render_prompt('prompt-id', { name: 'Alice' }, version: 'ver-123')
+text = client.render_prompt('greeting-template', { name: 'Alice' }, version: 'ver-123')
 
-# Or render from a prompt object
-prompt = client.get_prompt_production('prompt-id')
+# Or render from a prompt object (using name or ID)
+prompt = client.get_prompt_production('greeting-template')
 text = prompt.render({ name: 'Alice' })
 ```
 

@@ -31,8 +31,8 @@ credentials = ApiKeyCredentials.from_env()
 # Create a client
 client = ScopeClient(credentials=credentials)
 
-# Fetch and render a prompt
-version = client.get_prompt_production("greeting")
+# Fetch and render a prompt by name (or use prompt ID like "prompt_01HXYZ...")
+version = client.get_prompt_production("greeting-template")
 rendered = version.render({"name": "Alice"})
 print(rendered)  # "Hello, Alice!"
 ```
@@ -113,43 +113,48 @@ client = scope_client.client()
 
 ### Fetching Prompts
 
+All prompt methods accept either a prompt ID (e.g., `prompt_01HXYZ...`) or a prompt name. The API auto-detects: if the value starts with `prompt_` and is a valid ULID, it's treated as an ID; otherwise, it's treated as a name.
+
 ```python
 from scope_client import ScopeClient, ApiKeyCredentials
 
 credentials = ApiKeyCredentials.from_env()
 client = ScopeClient(credentials=credentials)
 
-# Get a prompt
-prompt = client.get_prompt("my-prompt")
+# Get a prompt by name
+prompt = client.get_prompt("my-greeting-prompt")
 print(f"Prompt: {prompt.name}")
 print(f"Has production: {prompt.has_production_version}")
 
-# Get the production version
-version = client.get_prompt_production("my-prompt")
+# Or by ID
+prompt = client.get_prompt("prompt_01HXYZ...")
+
+# Get the production version by name
+version = client.get_prompt_production("my-greeting-prompt")
 print(f"Content: {version.content}")
 print(f"Variables: {version.variables}")
 
 # Get the latest version
-latest = client.get_prompt_latest("my-prompt")
+latest = client.get_prompt_latest("my-greeting-prompt")
 
 # Get a specific version
-specific = client.get_prompt_version("my-prompt", "version-123")
+specific = client.get_prompt_version("my-greeting-prompt", "version-123")
 ```
 
 ### Rendering Prompts
 
 ```python
-# Render via the version object
-version = client.get_prompt_production("greeting")
+# Render via the version object (using prompt name)
+version = client.get_prompt_production("greeting-template")
 rendered = version.render({
     "name": "Alice",
     "time_of_day": "morning",
 })
 print(rendered)  # "Good morning, Alice!"
 
-# Or render directly via the client
+# Or render directly via the client (works with name or ID)
 rendered = client.render_prompt(
-    "greeting",
+    "greeting-template",  # prompt name
     {"name": "Bob", "time_of_day": "evening"},
     version="production",  # or "latest" or a specific version ID
 )

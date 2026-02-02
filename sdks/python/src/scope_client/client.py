@@ -105,10 +105,12 @@ class ScopeClient:
         return self._config
 
     def get_prompt(self, prompt_id: str, **options: Any) -> Prompt:
-        """Fetch a prompt by ID.
+        """Fetch a prompt by ID or name.
 
         Args:
-            prompt_id: The ID of the prompt to fetch.
+            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+                If the value starts with 'prompt_' and is a valid ULID, it's
+                treated as an ID; otherwise, it's treated as a name.
             **options: Request options.
                 cache: Whether to use cache (default: True if cache enabled).
                 cache_ttl: Custom TTL for this request in seconds.
@@ -122,6 +124,9 @@ class ScopeClient:
             ApiError: On other API errors.
 
         Example:
+            >>> # Fetch by ID
+            >>> prompt = client.get_prompt("prompt_01HXYZ...")
+            >>> # Or fetch by name
             >>> prompt = client.get_prompt("my-prompt")
             >>> print(prompt.name)
         """
@@ -137,7 +142,9 @@ class ScopeClient:
         """Fetch the latest version of a prompt.
 
         Args:
-            prompt_id: The ID of the prompt.
+            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+                If the value starts with 'prompt_' and is a valid ULID, it's
+                treated as an ID; otherwise, it's treated as a name.
             **options: Request options.
                 cache: Whether to use cache (default: True if cache enabled).
                 cache_ttl: Custom TTL for this request in seconds.
@@ -166,7 +173,9 @@ class ScopeClient:
         """Fetch the production version of a prompt.
 
         Args:
-            prompt_id: The ID of the prompt.
+            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+                If the value starts with 'prompt_' and is a valid ULID, it's
+                treated as an ID; otherwise, it's treated as a name.
             **options: Request options.
                 cache: Whether to use cache (default: True if cache enabled).
                 cache_ttl: Custom TTL for this request in seconds.
@@ -206,7 +215,9 @@ class ScopeClient:
         """Fetch a specific version of a prompt.
 
         Args:
-            prompt_id: The ID of the prompt.
+            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+                If the value starts with 'prompt_' and is a valid ULID, it's
+                treated as an ID; otherwise, it's treated as a name.
             version_id: The ID of the version to fetch.
             **options: Request options.
                 cache: Whether to use cache (default: True if cache enabled).
@@ -279,7 +290,9 @@ class ScopeClient:
         it with the provided variables in a single call.
 
         Args:
-            prompt_id: The ID of the prompt.
+            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+                If the value starts with 'prompt_' and is a valid ULID, it's
+                treated as an ID; otherwise, it's treated as a name.
             variables: Dictionary of variable names to values.
             version: Version to use - "production", "latest", or a version ID.
             **options: Request options passed to the fetch method.

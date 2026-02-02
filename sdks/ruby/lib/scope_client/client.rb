@@ -11,8 +11,10 @@ module ScopeClient
       @cache = Cache.new(default_ttl: @config.cache_ttl) if @config.cache_enabled
     end
 
-    # Get prompt metadata by ID
-    # @param prompt_id [String] The unique identifier of the prompt
+    # Get prompt metadata by ID or name
+    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
+    #   as an ID; otherwise, it's treated as a name.
     # @param options [Hash] Options hash
     # @option options [Boolean] :cache Whether to use cache (default: true)
     # @option options [Integer] :cache_ttl Custom cache TTL in seconds
@@ -26,7 +28,9 @@ module ScopeClient
     end
 
     # Get the latest version of a prompt
-    # @param prompt_id [String] The unique identifier of the prompt
+    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
+    #   as an ID; otherwise, it's treated as a name.
     # @param options [Hash] Options hash
     # @option options [Boolean] :cache Whether to use cache (default: true)
     # @option options [Integer] :cache_ttl Custom cache TTL in seconds
@@ -40,7 +44,9 @@ module ScopeClient
     end
 
     # Get the production version of a prompt
-    # @param prompt_id [String] The unique identifier of the prompt
+    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
+    #   as an ID; otherwise, it's treated as a name.
     # @param options [Hash] Options hash
     # @option options [Boolean] :cache Whether to use cache (default: true)
     # @option options [Integer] :cache_ttl Custom cache TTL in seconds
@@ -57,7 +63,9 @@ module ScopeClient
     end
 
     # Get a specific version of a prompt
-    # @param prompt_id [String] The unique identifier of the prompt
+    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
+    #   as an ID; otherwise, it's treated as a name.
     # @param version_id [String] The unique identifier of the version
     # @param options [Hash] Options hash
     # @option options [Boolean] :cache Whether to use cache (default: true)
@@ -90,7 +98,9 @@ module ScopeClient
     end
 
     # Render a prompt with variable substitution
-    # @param prompt_id [String] The unique identifier of the prompt
+    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
+    #   as an ID; otherwise, it's treated as a name.
     # @param variables [Hash] Variables to substitute in the prompt
     # @param version [Symbol, String] Version to use (:production, :latest, or specific version_id)
     # @param options [Hash] Options hash

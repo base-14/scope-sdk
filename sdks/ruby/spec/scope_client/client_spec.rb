@@ -291,4 +291,87 @@ RSpec.describe ScopeClient::Client do
       expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}").twice
     end
   end
+
+  describe 'fetching prompts by name' do
+    let(:prompt_name) { 'my-greeting-prompt' }
+
+    describe '#get_prompt' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_name}",
+          response_body: prompt_response(prompt_id: 'prompt_123', name: prompt_name)
+        )
+      end
+
+      it 'fetches prompt by name' do
+        result = client.get_prompt(prompt_name)
+
+        expect(result).to be_a(ScopeClient::Resources::Prompt)
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}")
+      end
+
+      it 'caches result using name as key' do
+        client.get_prompt(prompt_name)
+        client.get_prompt(prompt_name)
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}").once
+      end
+    end
+
+    describe '#get_prompt_latest' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_name}/latest",
+          response_body: prompt_version_response(prompt_id: 'prompt_123', version_id: 'ver_456', status: 'draft')
+        )
+      end
+
+      it 'fetches latest version by prompt name' do
+        result = client.get_prompt_latest(prompt_name)
+
+        expect(result).to be_a(ScopeClient::Resources::PromptVersion)
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}/latest")
+      end
+    end
+
+    describe '#get_prompt_production' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_name}/production",
+          response_body: prompt_version_response(prompt_id: 'prompt_123', version_id: 'ver_456', status: 'published')
+        )
+      end
+
+      it 'fetches production version by prompt name' do
+        result = client.get_prompt_production(prompt_name)
+
+        expect(result).to be_a(ScopeClient::Resources::PromptVersion)
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}/production")
+      end
+    end
+
+    describe '#render_prompt' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_name}/production",
+          response_body: prompt_version_response(
+            prompt_id: 'prompt_123',
+            version_id: 'ver_456',
+            content: 'Hello {{name}}, welcome to {{place}}!'
+          )
+        )
+      end
+
+      it 'renders prompt by name' do
+        result = client.render_prompt(prompt_name, { name: 'Alice', place: 'Scope' })
+
+        expect(result).to eq('Hello Alice, welcome to Scope!')
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}/production")
+      end
+    end
+  end
 end

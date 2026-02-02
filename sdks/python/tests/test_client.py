@@ -398,3 +398,95 @@ class TestScopeClientContextManager:
         client = ScopeClient(config=config)
         client.close()
         # Should be able to close without error
+
+
+class TestScopeClientGetPromptByName:
+    """Tests for fetching prompts by name instead of ID."""
+
+    def test_get_prompt_by_name(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_prompt_response: dict[str, Any],
+    ):
+        """Test fetching prompt by name."""
+        httpx_mock.add_response(json=mock_prompt_response)
+
+        client = ScopeClient(config=config)
+        prompt = client.get_prompt("my-greeting-prompt")
+
+        assert isinstance(prompt, Prompt)
+        # Verify the request URL used the name
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/my-greeting-prompt" in str(request.url)
+
+    def test_get_prompt_latest_by_name(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test fetching latest version by prompt name."""
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        version = client.get_prompt_latest("my-greeting-prompt")
+
+        assert isinstance(version, PromptVersion)
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/my-greeting-prompt/latest" in str(request.url)
+
+    def test_get_prompt_production_by_name(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test fetching production version by prompt name."""
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        version = client.get_prompt_production("my-greeting-prompt")
+
+        assert isinstance(version, PromptVersion)
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/my-greeting-prompt/production" in str(request.url)
+
+    def test_cache_key_uses_identifier(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_prompt_response: dict[str, Any],
+    ):
+        """Test that cache keys work correctly with names."""
+        httpx_mock.add_response(json=mock_prompt_response)
+
+        client = ScopeClient(config=config)
+
+        # First call with name
+        client.get_prompt("my-greeting-prompt")
+        # Second call with same name - should use cache
+        client.get_prompt("my-greeting-prompt")
+
+        # Only one HTTP request should be made
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_render_prompt_by_name(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test rendering prompt by name."""
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        rendered = client.render_prompt(
+            "my-greeting-prompt",
+            {"name": "Alice", "app": "Scope"},
+            version="production",
+        )
+
+        assert rendered == "Hello, Alice! Welcome to Scope."
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/my-greeting-prompt/production" in str(request.url)
