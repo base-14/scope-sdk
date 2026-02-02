@@ -53,15 +53,15 @@ Example test structure:
 
 ```ruby
 RSpec.describe ScopeClient::Client do
-  describe "#get_prompt_production" do
+  describe "#get_prompt_version" do
     context "when prompt exists" do
-      it "returns the production version" do
+      it "returns the production version by default" do
         # test implementation
       end
     end
 
-    context "when prompt does not exist" do
-      it "raises NotFoundError" do
+    context "when production version does not exist" do
+      it "raises NoProductionVersionError" do
         # test implementation
       end
     end
@@ -132,8 +132,8 @@ The SDK maps to these Scope API endpoints:
 
 | SDK Method | HTTP Endpoint |
 |------------|---------------|
-| `get_prompt(id)` | GET /prompts/{id} |
-| `get_prompt_latest(id)` | GET /prompts/{id}/latest |
-| `get_prompt_production(id)` | GET /prompts/{id}/production |
-| `get_prompt_version(id, vid)` | GET /prompts/{id}/versions/{vid} |
+| `get_prompt(name)` | GET /prompts/{name} |
+| `get_prompt_version(name)` | GET /prompts/{name}/production |
+| `get_prompt_version(name, label: :latest)` | GET /prompts/{name}/latest |
+| `get_prompt_version(name, version: vid)` | GET /prompts/{name}/versions/{vid} |
 | `list_prompts(**params)` | GET /prompts |

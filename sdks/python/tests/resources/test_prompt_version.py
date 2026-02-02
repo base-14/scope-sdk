@@ -281,3 +281,97 @@ class TestPromptVersion:
 
         assert "(production)" not in repr_str
         assert "v2" in repr_str
+
+
+class TestPromptVersionType:
+    """Tests for prompt type property."""
+
+    def test_type_defaults_to_text(self):
+        """Test type defaults to 'text' when not in API response."""
+        version = PromptVersion({"id": "v1", "content": "Hello!"})
+        assert version.type == "text"
+
+    def test_type_from_api_response(self):
+        """Test type from API response."""
+        version = PromptVersion({"id": "v1", "content": "Hello!", "prompt_type": "chat"})
+        assert version.type == "chat"
+
+    def test_type_defaults_to_text_when_none(self):
+        """Test type defaults to 'text' when API returns None."""
+        version = PromptVersion({"id": "v1", "content": "Hello!", "prompt_type": None})
+        assert version.type == "text"
+
+    def test_type_defaults_to_text_when_empty_string(self):
+        """Test type defaults to 'text' when API returns empty string."""
+        version = PromptVersion({"id": "v1", "content": "Hello!", "prompt_type": ""})
+        assert version.type == "text"
+
+
+class TestPromptVersionMetadata:
+    """Tests for metadata access."""
+
+    def test_metadata_empty_by_default(self):
+        """Test metadata is empty dict when not in API response."""
+        version = PromptVersion({"id": "v1", "content": "Hello!"})
+        assert version.metadata == {}
+
+    def test_metadata_from_api_response(self):
+        """Test metadata from API response."""
+        version = PromptVersion(
+            {
+                "id": "v1",
+                "content": "Hello!",
+                "metadata": {"model": "gpt-4", "temperature": 0.7},
+            }
+        )
+        assert version.metadata == {"model": "gpt-4", "temperature": 0.7}
+
+    def test_metadata_handles_none(self):
+        """Test metadata returns empty dict when API returns None."""
+        version = PromptVersion({"id": "v1", "content": "Hello!", "metadata": None})
+        assert version.metadata == {}
+
+    def test_get_metadata_returns_value(self):
+        """Test get_metadata returns value for existing key."""
+        version = PromptVersion(
+            {
+                "id": "v1",
+                "content": "Hello!",
+                "metadata": {"model": "gpt-4"},
+            }
+        )
+        assert version.get_metadata("model") == "gpt-4"
+
+    def test_get_metadata_returns_default(self):
+        """Test get_metadata returns default for missing key."""
+        version = PromptVersion({"id": "v1", "content": "Hello!", "metadata": {}})
+        assert version.get_metadata("model", "default") == "default"
+
+    def test_get_metadata_returns_none_by_default(self):
+        """Test get_metadata returns None when key missing and no default."""
+        version = PromptVersion({"id": "v1", "content": "Hello!"})
+        assert version.get_metadata("missing") is None
+
+    def test_get_metadata_with_nested_value(self):
+        """Test get_metadata with nested dict value."""
+        version = PromptVersion(
+            {
+                "id": "v1",
+                "content": "Hello!",
+                "metadata": {"config": {"max_tokens": 1000, "top_p": 0.9}},
+            }
+        )
+        config = version.get_metadata("config")
+        assert config == {"max_tokens": 1000, "top_p": 0.9}
+
+    def test_get_metadata_returns_falsy_values(self):
+        """Test get_metadata correctly returns falsy values like 0 or False."""
+        version = PromptVersion(
+            {
+                "id": "v1",
+                "content": "Hello!",
+                "metadata": {"temperature": 0, "stream": False},
+            }
+        )
+        assert version.get_metadata("temperature") == 0
+        assert version.get_metadata("stream") is False

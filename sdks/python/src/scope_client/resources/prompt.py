@@ -65,7 +65,7 @@ class Prompt(Resource):
         """Fetch the latest version of this prompt.
 
         Args:
-            **options: Options passed to client.get_prompt_latest.
+            **options: Options passed to client.get_prompt_version.
                 cache: Whether to use cache (default: True).
                 cache_ttl: Custom TTL for this request.
 
@@ -79,13 +79,13 @@ class Prompt(Resource):
         if self._client is None:
             raise RuntimeError("Client reference required to fetch versions")
 
-        return self._client.get_prompt_latest(self.id, **options)
+        return self._client.get_prompt_version(self.id, label="latest", **options)
 
     def production_version(self, **options: Any) -> "PromptVersion":
         """Fetch the production version of this prompt.
 
         Args:
-            **options: Options passed to client.get_prompt_production.
+            **options: Options passed to client.get_prompt_version.
                 cache: Whether to use cache (default: True).
                 cache_ttl: Custom TTL for this request.
 
@@ -100,7 +100,7 @@ class Prompt(Resource):
         if self._client is None:
             raise RuntimeError("Client reference required to fetch versions")
 
-        return self._client.get_prompt_production(self.id, **options)
+        return self._client.get_prompt_version(self.id, **options)
 
     def version(self, version_id: str, **options: Any) -> "PromptVersion":
         """Fetch a specific version of this prompt.
@@ -121,7 +121,7 @@ class Prompt(Resource):
         if self._client is None:
             raise RuntimeError("Client reference required to fetch versions")
 
-        return self._client.get_prompt_version(self.id, version_id, **options)
+        return self._client.get_prompt_version(self.id, version=version_id, **options)
 
     def __repr__(self) -> str:
         """Get string representation of prompt.

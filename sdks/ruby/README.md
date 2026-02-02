@@ -42,13 +42,14 @@ end
 # Create a client
 client = ScopeClient.client
 
-# Get and render a production prompt by name (or use prompt ID like "prompt_01HXYZ...")
-rendered = client.render_prompt('my-greeting-prompt', {
-  user_name: 'Alice',
-  product: 'Widget'
-})
+# Get and render a prompt (defaults to production version)
+version = client.get_prompt_version('my-greeting-prompt')
+rendered = version.render(user_name: 'Alice', product: 'Widget')
 
 puts rendered
+
+# Access prompt metadata
+model = version.get_metadata('model')  # e.g., 'gpt-4'
 ```
 
 ## Configuration
@@ -110,20 +111,25 @@ end
 All prompt methods accept either a prompt ID (e.g., `prompt_01HXYZ...`) or a prompt name. The API auto-detects: if the value starts with `prompt_` and is a valid ULID, it's treated as an ID; otherwise, it's treated as a name.
 
 ```ruby
-# Get production version by name (recommended for production use)
-prompt = client.get_prompt_production('my-greeting-prompt')
+# Get a prompt version (defaults to production)
+version = client.get_prompt_version('my-greeting-prompt')
+puts version.content       # Template content
+puts version.variables     # Array of variable names
+puts version.type          # "text" or "chat"
 
-# Or by ID
-prompt = client.get_prompt_production('prompt_01HXYZ...')
+# Get latest version
+latest = client.get_prompt_version('my-greeting-prompt', label: :latest)
 
-# Get latest version (may be draft)
-prompt = client.get_prompt_latest('my-greeting-prompt')
+# Get production version explicitly
+production = client.get_prompt_version('my-greeting-prompt', label: :production)
 
-# Get specific version
-prompt = client.get_prompt_version('my-greeting-prompt', 'version-id')
+# Get specific version by ID
+specific = client.get_prompt_version('my-greeting-prompt', version: 'version-123')
 
-# Get prompt metadata
+# Get prompt metadata (without version content)
 prompt = client.get_prompt('my-greeting-prompt')
+puts prompt.name
+puts prompt.production_version?
 
 # List prompts with filters
 results = client.list_prompts(
@@ -137,43 +143,68 @@ results = client.list_prompts(
 ### Rendering Prompts
 
 ```ruby
-# Render with production version using prompt name (default)
+# Render via the version object
+version = client.get_prompt_version('greeting-template')
+text = version.render(name: 'Alice', time_of_day: 'morning')
+puts text  # "Good morning, Alice!"
+
+# Or render directly via the client
 text = client.render_prompt('greeting-template', { name: 'Alice' })
 
 # Render with latest version
-text = client.render_prompt('greeting-template', { name: 'Alice' }, version: :latest)
+text = client.render_prompt('greeting-template', { name: 'Alice' }, label: :latest)
+```
 
-# Render specific version
-text = client.render_prompt('greeting-template', { name: 'Alice' }, version: 'ver-123')
+### Accessing Metadata
 
-# Or render from a prompt object (using name or ID)
-prompt = client.get_prompt_production('greeting-template')
-text = prompt.render({ name: 'Alice' })
+Prompt versions can include metadata (e.g., model configuration) set in the Scope UI:
+
+```ruby
+version = client.get_prompt_version('my-prompt')
+
+# Access all metadata
+puts version.metadata  # {"model" => "gpt-4", "temperature" => 0.7}
+
+# Get specific metadata values
+model = version.get_metadata('model')  # "gpt-4"
+temperature = version.get_metadata('temperature', 0.7)  # with default
+max_tokens = version.get_metadata('max_tokens')  # nil if not set
+
+# Use metadata with your LLM client
+response = openai.chat(
+  parameters: {
+    model: version.get_metadata('model', 'gpt-4'),
+    temperature: version.get_metadata('temperature', 0.7),
+    messages: [{ role: 'user', content: version.render(name: 'Alice') }]
+  }
+)
 ```
 
 ### Working with Prompt Versions
 
 ```ruby
-prompt = client.get_prompt_production('prompt-id')
+version = client.get_prompt_version('prompt-id')
 
 # Access version properties
-puts prompt.content          # Raw template content
-puts prompt.variables        # Array of variable names
-puts prompt.version          # Version number
-puts prompt.status           # draft, published, or archived
+puts version.content          # Raw template content
+puts version.variables        # Array of variable names
+puts version.version          # Version number
+puts version.status           # draft, published, or archived
+puts version.type             # text or chat
 
 # Check status
-prompt.draft?                # true if draft
-prompt.published?            # true if published
-prompt.production?           # alias for published?
-prompt.archived?             # true if archived
+version.draft?                # true if draft
+version.published?            # true if published
+version.production?           # alias for published?
+version.archived?             # true if archived
 ```
 
 ## Error Handling
 
 ```ruby
 begin
-  prompt = client.get_prompt_production('prompt-id')
+  version = client.get_prompt_version('prompt-id')
+  rendered = version.render(name: 'Alice')
 rescue ScopeClient::InvalidCredentialsError
   # Invalid org_id, api_key, or api_secret
 rescue ScopeClient::TokenRefreshError
@@ -205,10 +236,10 @@ Caching is enabled by default with a 5-minute TTL.
 
 ```ruby
 # Disable cache for a specific request
-prompt = client.get_prompt_production('prompt-id', cache: false)
+version = client.get_prompt_version('prompt-id', cache: false)
 
 # Use custom TTL for a request
-prompt = client.get_prompt_production('prompt-id', cache_ttl: 60)
+version = client.get_prompt_version('prompt-id', cache_ttl: 60)
 
 # Clear all cached data
 client.clear_cache
@@ -250,17 +281,18 @@ ScopeClient.configure { |c| c.credentials = credentials }
 scope = ScopeClient.client
 openai = OpenAI::Client.new
 
-# Get and render prompt
-prompt = scope.get_prompt_production('customer-support')
-rendered = prompt.render({
+# Get prompt version and render
+version = scope.get_prompt_version('customer-support')
+rendered = version.render(
   customer_name: 'Alice',
   issue: 'billing question'
-})
+)
 
-# Use with OpenAI
+# Use metadata for model configuration
 response = openai.chat(
   parameters: {
-    model: 'gpt-4',
+    model: version.get_metadata('model', 'gpt-4'),
+    temperature: version.get_metadata('temperature', 0.7),
     messages: [{ role: 'user', content: rendered }]
   }
 )
@@ -279,14 +311,15 @@ ScopeClient.configure { |c| c.credentials = credentials }
 scope = ScopeClient.client
 anthropic = Anthropic::Client.new
 
-rendered = scope.render_prompt('assistant-prompt', {
+version = scope.get_prompt_version('assistant-prompt')
+rendered = version.render(
   context: 'Technical support',
   user_query: params[:query]
-})
+)
 
 response = anthropic.messages(
-  model: 'claude-3-opus-20240229',
-  max_tokens: 1024,
+  model: version.get_metadata('model', 'claude-3-opus-20240229'),
+  max_tokens: version.get_metadata('max_tokens', 1024),
   messages: [{ role: 'user', content: rendered }]
 )
 ```

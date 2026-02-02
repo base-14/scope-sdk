@@ -104,30 +104,10 @@ RSpec.describe ScopeClient::Client do
     end
   end
 
-  describe '#get_prompt_latest' do
+  describe '#get_prompt_version' do
     let(:prompt_id) { 'prompt_123' }
 
-    before do
-      stub_scope_api(
-        :get,
-        "/prompts/#{prompt_id}/latest",
-        response_body: prompt_version_response(prompt_id: prompt_id, version_id: 'ver_456', status: 'draft')
-      )
-    end
-
-    it 'fetches and returns the latest prompt version' do
-      result = client.get_prompt_latest(prompt_id)
-
-      expect(result).to be_a(ScopeClient::Resources::PromptVersion)
-      expect(result.prompt_id).to eq(prompt_id)
-      expect(result.status).to eq('draft')
-    end
-  end
-
-  describe '#get_prompt_production' do
-    let(:prompt_id) { 'prompt_123' }
-
-    context 'when production version exists' do
+    describe 'defaults to production' do
       before do
         stub_scope_api(
           :get,
@@ -136,16 +116,95 @@ RSpec.describe ScopeClient::Client do
         )
       end
 
-      it 'fetches and returns the production prompt version' do
-        result = client.get_prompt_production(prompt_id)
+      it 'fetches production version by default' do
+        result = client.get_prompt_version(prompt_id)
 
         expect(result).to be_a(ScopeClient::Resources::PromptVersion)
         expect(result.status).to eq('published')
         expect(result.production?).to be(true)
       end
+
+      it 'makes request to production endpoint' do
+        client.get_prompt_version(prompt_id)
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/production")
+      end
     end
 
-    context 'when production version does not exist' do
+    describe 'with production label' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_id}/production",
+          response_body: prompt_version_response(prompt_id: prompt_id, version_id: 'ver_456', status: 'published')
+        )
+      end
+
+      it 'fetches production version with explicit label' do
+        result = client.get_prompt_version(prompt_id, label: :production)
+
+        expect(result).to be_a(ScopeClient::Resources::PromptVersion)
+        expect(result.production?).to be(true)
+      end
+    end
+
+    describe 'with latest label' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_id}/latest",
+          response_body: prompt_version_response(prompt_id: prompt_id, version_id: 'ver_456', status: 'draft')
+        )
+      end
+
+      it 'fetches latest version' do
+        result = client.get_prompt_version(prompt_id, label: :latest)
+
+        expect(result).to be_a(ScopeClient::Resources::PromptVersion)
+        expect(result.prompt_id).to eq(prompt_id)
+        expect(result.status).to eq('draft')
+      end
+
+      it 'makes request to latest endpoint' do
+        client.get_prompt_version(prompt_id, label: :latest)
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/latest")
+      end
+
+      it 'works with string label' do
+        client.get_prompt_version(prompt_id, label: 'latest')
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/latest")
+      end
+    end
+
+    describe 'with specific version' do
+      let(:version_id) { 'ver_456' }
+
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_id}/versions/#{version_id}",
+          response_body: prompt_version_response(prompt_id: prompt_id, version_id: version_id, version: 2)
+        )
+      end
+
+      it 'fetches specific version' do
+        result = client.get_prompt_version(prompt_id, version: version_id)
+
+        expect(result).to be_a(ScopeClient::Resources::PromptVersion)
+        expect(result.version_id).to eq(version_id)
+        expect(result.version).to eq(2)
+      end
+
+      it 'makes request to versions endpoint' do
+        client.get_prompt_version(prompt_id, version: version_id)
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/versions/#{version_id}")
+      end
+    end
+
+    describe 'when production version does not exist' do
       before do
         stub_scope_api(
           :get,
@@ -157,30 +216,50 @@ RSpec.describe ScopeClient::Client do
 
       it 'raises NoProductionVersionError' do
         expect do
-          client.get_prompt_production(prompt_id)
+          client.get_prompt_version(prompt_id)
         end.to raise_error(ScopeClient::NoProductionVersionError, /#{prompt_id}/)
       end
     end
-  end
 
-  describe '#get_prompt_version' do
-    let(:prompt_id) { 'prompt_123' }
-    let(:version_id) { 'ver_456' }
+    describe 'when latest version does not exist' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_id}/latest",
+          response_body: { 'code' => 'not_found', 'message' => 'Not found' },
+          status: 404
+        )
+      end
 
-    before do
-      stub_scope_api(
-        :get,
-        "/prompts/#{prompt_id}/versions/#{version_id}",
-        response_body: prompt_version_response(prompt_id: prompt_id, version_id: version_id, version: 2)
-      )
+      it 'raises NotFoundError (not NoProductionVersionError)' do
+        expect do
+          client.get_prompt_version(prompt_id, label: :latest)
+        end.to raise_error(ScopeClient::NotFoundError)
+      end
     end
 
-    it 'fetches and returns the specific prompt version' do
-      result = client.get_prompt_version(prompt_id, version_id)
+    describe 'caching' do
+      before do
+        stub_scope_api(
+          :get,
+          "/prompts/#{prompt_id}/production",
+          response_body: prompt_version_response(prompt_id: prompt_id, version_id: 'ver_456')
+        )
+      end
 
-      expect(result).to be_a(ScopeClient::Resources::PromptVersion)
-      expect(result.version_id).to eq(version_id)
-      expect(result.version).to eq(2)
+      it 'caches responses' do
+        client.get_prompt_version(prompt_id)
+        client.get_prompt_version(prompt_id)
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/production").once
+      end
+
+      it 'bypasses cache when disabled' do
+        client.get_prompt_version(prompt_id, cache: false)
+        client.get_prompt_version(prompt_id, cache: false)
+
+        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/production").twice
+      end
     end
   end
 
@@ -247,26 +326,9 @@ RSpec.describe ScopeClient::Client do
         )
       )
 
-      result = client.render_prompt(prompt_id, { name: 'Bob' }, version: :latest)
+      result = client.render_prompt(prompt_id, { name: 'Bob' }, label: :latest)
 
       expect(result).to eq('Hello Bob!')
-    end
-
-    it 'uses specific version when version_id provided' do
-      version_id = 'ver_specific'
-      stub_scope_api(
-        :get,
-        "/prompts/#{prompt_id}/versions/#{version_id}",
-        response_body: prompt_version_response(
-          prompt_id: prompt_id,
-          version_id: version_id,
-          content: 'Specific: {{name}}'
-        )
-      )
-
-      result = client.render_prompt(prompt_id, { name: 'Charlie' }, version: version_id)
-
-      expect(result).to eq('Specific: Charlie')
     end
 
     it 'raises MissingVariableError for missing variables' do
@@ -319,7 +381,7 @@ RSpec.describe ScopeClient::Client do
       end
     end
 
-    describe '#get_prompt_latest' do
+    describe '#get_prompt_version with latest label' do
       before do
         stub_scope_api(
           :get,
@@ -329,14 +391,14 @@ RSpec.describe ScopeClient::Client do
       end
 
       it 'fetches latest version by prompt name' do
-        result = client.get_prompt_latest(prompt_name)
+        result = client.get_prompt_version(prompt_name, label: :latest)
 
         expect(result).to be_a(ScopeClient::Resources::PromptVersion)
         expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}/latest")
       end
     end
 
-    describe '#get_prompt_production' do
+    describe '#get_prompt_version defaults to production' do
       before do
         stub_scope_api(
           :get,
@@ -346,7 +408,7 @@ RSpec.describe ScopeClient::Client do
       end
 
       it 'fetches production version by prompt name' do
-        result = client.get_prompt_production(prompt_name)
+        result = client.get_prompt_version(prompt_name)
 
         expect(result).to be_a(ScopeClient::Resources::PromptVersion)
         expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}/production")

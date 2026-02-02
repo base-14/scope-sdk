@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module ScopeClient
+  # Label constants
+  LABEL_PRODUCTION = 'production'
+  LABEL_LATEST = 'latest'
+
   class Client
     attr_reader :config, :connection, :cache
 
@@ -27,56 +31,27 @@ module ScopeClient
       end
     end
 
-    # Get the latest version of a prompt
-    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    # Get a prompt version by name
+    # @param name [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
     #   If the value starts with 'prompt_' and is a valid ULID, it's treated
     #   as an ID; otherwise, it's treated as a name.
-    # @param options [Hash] Options hash
-    # @option options [Boolean] :cache Whether to use cache (default: true)
-    # @option options [Integer] :cache_ttl Custom cache TTL in seconds
-    # @return [Resources::PromptVersion] The latest prompt version
-    def get_prompt_latest(prompt_id, **options)
-      cache_key = "prompt:#{prompt_id}:latest"
-      fetch_with_cache(cache_key, options) do
-        data = connection.get("prompts/#{prompt_id}/latest")
-        Resources::PromptVersion.new(data, client: self)
-      end
-    end
-
-    # Get the production version of a prompt
-    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
-    #   as an ID; otherwise, it's treated as a name.
-    # @param options [Hash] Options hash
-    # @option options [Boolean] :cache Whether to use cache (default: true)
-    # @option options [Integer] :cache_ttl Custom cache TTL in seconds
-    # @return [Resources::PromptVersion] The production prompt version
-    # @raise [NoProductionVersionError] If no production version exists
-    def get_prompt_production(prompt_id, **options)
-      cache_key = "prompt:#{prompt_id}:production"
-      fetch_with_cache(cache_key, options) do
-        data = connection.get("prompts/#{prompt_id}/production")
-        Resources::PromptVersion.new(data, client: self)
-      end
-    rescue NotFoundError
-      raise NoProductionVersionError, "No production version exists for prompt #{prompt_id}"
-    end
-
-    # Get a specific version of a prompt
-    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
-    #   as an ID; otherwise, it's treated as a name.
-    # @param version_id [String] The unique identifier of the version
+    # @param label [String, Symbol] Label to fetch - :production (default), :latest
+    # @param version [String] Specific version ID (overrides label)
     # @param options [Hash] Options hash
     # @option options [Boolean] :cache Whether to use cache (default: true)
     # @option options [Integer] :cache_ttl Custom cache TTL in seconds
     # @return [Resources::PromptVersion] The prompt version
-    def get_prompt_version(prompt_id, version_id, **options)
-      cache_key = "prompt:#{prompt_id}:version:#{version_id}"
+    # @raise [NoProductionVersionError] If label is :production and none exists
+    def get_prompt_version(name, label: nil, version: nil, **options)
+      cache_key, endpoint = resolve_prompt_version_path(name, label, version)
       fetch_with_cache(cache_key, options) do
-        data = connection.get("prompts/#{prompt_id}/versions/#{version_id}")
+        data = connection.get(endpoint)
         Resources::PromptVersion.new(data, client: self)
       end
+    rescue NotFoundError
+      raise NoProductionVersionError, "No production version exists for prompt #{name}" if production_label?(label)
+
+      raise
     end
 
     # List prompts with pagination and filters
@@ -98,26 +73,18 @@ module ScopeClient
     end
 
     # Render a prompt with variable substitution
-    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
+    # @param name [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
     #   If the value starts with 'prompt_' and is a valid ULID, it's treated
     #   as an ID; otherwise, it's treated as a name.
     # @param variables [Hash] Variables to substitute in the prompt
-    # @param version [Symbol, String] Version to use (:production, :latest, or specific version_id)
+    # @param label [Symbol, String] Label to use - :production (default), :latest
     # @param options [Hash] Options hash
     # @option options [Boolean] :cache Whether to use cache (default: true)
     # @option options [Integer] :cache_ttl Custom cache TTL in seconds
     # @return [String] The rendered prompt content
-    def render_prompt(prompt_id, variables, version: :production, cache: true, cache_ttl: nil)
+    def render_prompt(name, variables, label: :production, cache: true, cache_ttl: nil)
       options = { cache: cache, cache_ttl: cache_ttl }
-      prompt_version = case version
-                       when :production
-                         get_prompt_production(prompt_id, **options)
-                       when :latest
-                         get_prompt_latest(prompt_id, **options)
-                       else
-                         get_prompt_version(prompt_id, version, **options)
-                       end
-
+      prompt_version = get_prompt_version(name, label: label, **options)
       prompt_version.render(variables)
     end
 
@@ -143,6 +110,21 @@ module ScopeClient
 
       ttl = options[:cache_ttl]
       @cache.fetch(key, ttl: ttl, &block)
+    end
+
+    def resolve_prompt_version_path(name, label, version)
+      if version
+        ["prompt:#{name}:version:#{version}", "prompts/#{name}/versions/#{version}"]
+      elsif label.to_s == LABEL_LATEST
+        ["prompt:#{name}:latest", "prompts/#{name}/latest"]
+      else
+        # Default to production
+        ["prompt:#{name}:production", "prompts/#{name}/production"]
+      end
+    end
+
+    def production_label?(label)
+      label.nil? || label.to_s == LABEL_PRODUCTION
     end
   end
 end

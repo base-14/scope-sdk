@@ -12,6 +12,8 @@ RSpec.describe ScopeClient::Resources::PromptVersion do
       'content' => 'Hello {{name}}, your balance is {{balance}}',
       'variables' => %w[name balance],
       'status' => 'published',
+      'prompt_type' => 'text',
+      'metadata' => { 'model' => 'gpt-4', 'temperature' => 0.7 },
       'created_at' => '2024-01-15T10:00:00Z'
     }
   end
@@ -44,6 +46,81 @@ RSpec.describe ScopeClient::Resources::PromptVersion do
       expect do
         prompt_version.render(name: 'Alice')
       end.to raise_error(ScopeClient::MissingVariableError, /balance/)
+    end
+  end
+
+  describe '#type' do
+    it 'returns the prompt type from API response' do
+      expect(prompt_version.type).to eq('text')
+    end
+
+    it 'defaults to text when prompt_type is nil' do
+      version = described_class.new(data.merge('prompt_type' => nil))
+
+      expect(version.type).to eq('text')
+    end
+
+    it 'defaults to text when prompt_type is missing' do
+      data_without_prompt_type = data.reject { |k, _| k == 'prompt_type' }
+      version = described_class.new(data_without_prompt_type)
+
+      expect(version.type).to eq('text')
+    end
+
+    it 'returns chat when prompt_type is chat' do
+      version = described_class.new(data.merge('prompt_type' => 'chat'))
+
+      expect(version.type).to eq('chat')
+    end
+  end
+
+  describe '#metadata' do
+    it 'returns the metadata from API response' do
+      expect(prompt_version.metadata).to eq({ 'model' => 'gpt-4', 'temperature' => 0.7 })
+    end
+
+    it 'returns empty hash when metadata is nil' do
+      version = described_class.new(data.merge('metadata' => nil))
+
+      expect(version.metadata).to eq({})
+    end
+
+    it 'returns empty hash when metadata is missing' do
+      data_without_metadata = data.reject { |k, _| k == 'metadata' }
+      version = described_class.new(data_without_metadata)
+
+      expect(version.metadata).to eq({})
+    end
+  end
+
+  describe '#get_metadata' do
+    it 'returns value for existing key' do
+      expect(prompt_version.get_metadata('model')).to eq('gpt-4')
+    end
+
+    it 'returns value for symbol key' do
+      expect(prompt_version.get_metadata(:model)).to eq('gpt-4')
+    end
+
+    it 'returns default when key is missing' do
+      expect(prompt_version.get_metadata('unknown', 'default_value')).to eq('default_value')
+    end
+
+    it 'returns nil when key is missing and no default' do
+      expect(prompt_version.get_metadata('unknown')).to be_nil
+    end
+
+    it 'returns falsy values correctly' do
+      version = described_class.new(data.merge('metadata' => { 'temperature' => 0, 'stream' => false }))
+
+      expect(version.get_metadata('temperature')).to eq(0)
+      expect(version.get_metadata('stream')).to be(false)
+    end
+
+    it 'returns nested values' do
+      version = described_class.new(data.merge('metadata' => { 'config' => { 'max_tokens' => 1000 } }))
+
+      expect(version.get_metadata('config')).to eq({ 'max_tokens' => 1000 })
     end
   end
 

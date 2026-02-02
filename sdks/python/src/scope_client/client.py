@@ -18,6 +18,10 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
+# Label constants
+LABEL_PRODUCTION = "production"
+LABEL_LATEST = "latest"
+
 
 class ScopeClient:
     """Client for the Scope Prompt Management API.
@@ -56,7 +60,7 @@ class ScopeClient:
         >>> print(prompt.name)
 
         >>> # Get production version and render
-        >>> version = client.get_prompt_production("my-prompt")
+        >>> version = client.get_prompt_version("my-prompt")
         >>> rendered = version.render(name="Alice")
     """
 
@@ -138,110 +142,76 @@ class ScopeClient:
 
         return self._fetch_with_cache(cache_key, fetch, **options)
 
-    def get_prompt_latest(self, prompt_id: str, **options: Any) -> PromptVersion:
-        """Fetch the latest version of a prompt.
+    def get_prompt_version(
+        self,
+        name: str,
+        *,
+        label: Optional[str] = None,
+        version: Optional[str] = None,
+        **options: Any,
+    ) -> PromptVersion:
+        """Fetch a prompt version by name.
 
         Args:
-            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-                If the value starts with 'prompt_' and is a valid ULID, it's
-                treated as an ID; otherwise, it's treated as a name.
+            name: The name or ID of the prompt.
+            label: Label to fetch - "production" (default), "latest".
+            version: Specific version ID (overrides label).
             **options: Request options.
                 cache: Whether to use cache (default: True if cache enabled).
                 cache_ttl: Custom TTL for this request in seconds.
 
         Returns:
-            PromptVersion: The latest version of the prompt.
+            PromptVersion: The matching prompt version.
 
         Raises:
+            NoProductionVersionError: If label="production" and none exists.
             NotFoundError: If prompt or version not found.
             AuthenticationError: If authentication fails.
             ApiError: On other API errors.
 
         Example:
-            >>> version = client.get_prompt_latest("my-prompt")
-            >>> print(f"Latest: v{version.version_number}")
+            >>> prompt = client.get_prompt_version("greeting")
+            >>> prompt = client.get_prompt_version("greeting", label="latest")
+            >>> prompt = client.get_prompt_version("greeting", version="v123")
+            >>> prompt.get_metadata("model")
+            >>> rendered = prompt.render(name="Alice")
         """
-        cache_key = f"prompt:{prompt_id}:latest"
-
-        def fetch() -> PromptVersion:
-            data = self._connection.get(f"prompts/{prompt_id}/latest")
-            return PromptVersion(data, client=self)
-
-        return self._fetch_with_cache(cache_key, fetch, **options)
-
-    def get_prompt_production(self, prompt_id: str, **options: Any) -> PromptVersion:
-        """Fetch the production version of a prompt.
-
-        Args:
-            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-                If the value starts with 'prompt_' and is a valid ULID, it's
-                treated as an ID; otherwise, it's treated as a name.
-            **options: Request options.
-                cache: Whether to use cache (default: True if cache enabled).
-                cache_ttl: Custom TTL for this request in seconds.
-
-        Returns:
-            PromptVersion: The production version of the prompt.
-
-        Raises:
-            NoProductionVersionError: If no production version exists.
-            NotFoundError: If prompt not found.
-            AuthenticationError: If authentication fails.
-            ApiError: On other API errors.
-
-        Example:
-            >>> version = client.get_prompt_production("my-prompt")
-            >>> if version.is_production:
-            ...     print("Got production version!")
-        """
-        cache_key = f"prompt:{prompt_id}:production"
+        cache_key, endpoint = self._resolve_prompt_version_path(name, label, version)
 
         def fetch() -> PromptVersion:
             try:
-                data = self._connection.get(f"prompts/{prompt_id}/production")
+                data = self._connection.get(endpoint)
                 return PromptVersion(data, client=self)
             except NotFoundError:
-                # Convert to more specific error
-                raise NoProductionVersionError(prompt_id) from None
+                if label is None or label == LABEL_PRODUCTION:
+                    raise NoProductionVersionError(name) from None
+                raise
 
         return self._fetch_with_cache(cache_key, fetch, **options)
 
-    def get_prompt_version(
+    def _resolve_prompt_version_path(
         self,
-        prompt_id: str,
-        version_id: str,
-        **options: Any,
-    ) -> PromptVersion:
-        """Fetch a specific version of a prompt.
+        name: str,
+        label: Optional[str],
+        version: Optional[str],
+    ) -> tuple[str, str]:
+        """Resolve cache key and API endpoint for a prompt version request.
 
         Args:
-            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-                If the value starts with 'prompt_' and is a valid ULID, it's
-                treated as an ID; otherwise, it's treated as a name.
-            version_id: The ID of the version to fetch.
-            **options: Request options.
-                cache: Whether to use cache (default: True if cache enabled).
-                cache_ttl: Custom TTL for this request in seconds.
+            name: The name or ID of the prompt.
+            label: Label to fetch - "production", "latest".
+            version: Specific version ID (overrides label).
 
         Returns:
-            PromptVersion: The specified version.
-
-        Raises:
-            NotFoundError: If prompt or version not found.
-            AuthenticationError: If authentication fails.
-            ApiError: On other API errors.
-
-        Example:
-            >>> version = client.get_prompt_version("my-prompt", "v1")
-            >>> print(version.content)
+            Tuple of (cache_key, endpoint).
         """
-        cache_key = f"prompt:{prompt_id}:version:{version_id}"
-
-        def fetch() -> PromptVersion:
-            data = self._connection.get(f"prompts/{prompt_id}/versions/{version_id}")
-            return PromptVersion(data, client=self)
-
-        return self._fetch_with_cache(cache_key, fetch, **options)
+        if version is not None:
+            return (f"prompt:{name}:version:{version}", f"prompts/{name}/versions/{version}")
+        elif label == LABEL_LATEST:
+            return (f"prompt:{name}:latest", f"prompts/{name}/latest")
+        else:
+            # Default to production
+            return (f"prompt:{name}:production", f"prompts/{name}/production")
 
     def list_prompts(self, **params: Any) -> dict[str, Any]:
         """List all prompts.
@@ -279,9 +249,9 @@ class ScopeClient:
 
     def render_prompt(
         self,
-        prompt_id: str,
+        name: str,
         variables: dict[str, str],
-        version: str = "production",
+        label: str = LABEL_PRODUCTION,
         **options: Any,
     ) -> str:
         """Fetch a prompt version and render it with variables.
@@ -290,18 +260,16 @@ class ScopeClient:
         it with the provided variables in a single call.
 
         Args:
-            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-                If the value starts with 'prompt_' and is a valid ULID, it's
-                treated as an ID; otherwise, it's treated as a name.
+            name: The name or ID of the prompt.
             variables: Dictionary of variable names to values.
-            version: Version to use - "production", "latest", or a version ID.
+            label: Label to use - "production" (default) or "latest".
             **options: Request options passed to the fetch method.
 
         Returns:
             Rendered prompt string.
 
         Raises:
-            NoProductionVersionError: If version="production" and none exists.
+            NoProductionVersionError: If label="production" and none exists.
             NotFoundError: If prompt or version not found.
             MissingVariableError: If required variables are missing.
             ValidationError: If unknown variables are provided.
@@ -311,20 +279,12 @@ class ScopeClient:
             >>> rendered = client.render_prompt(
             ...     "greeting",
             ...     {"name": "Alice", "time": "morning"},
-            ...     version="production"
+            ...     label="production"
             ... )
             >>> print(rendered)
             'Good morning, Alice!'
         """
-        # Fetch the appropriate version
-        if version == "production":
-            prompt_version = self.get_prompt_production(prompt_id, **options)
-        elif version == "latest":
-            prompt_version = self.get_prompt_latest(prompt_id, **options)
-        else:
-            prompt_version = self.get_prompt_version(prompt_id, version, **options)
-
-        # Render and return
+        prompt_version = self.get_prompt_version(name, label=label, **options)
         return prompt_version.render(**variables)
 
     def clear_cache(self) -> None:

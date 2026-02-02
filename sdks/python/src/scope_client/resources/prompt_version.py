@@ -13,6 +13,12 @@ if TYPE_CHECKING:
     from scope_client.client import ScopeClient
 
 
+# Prompt type constants
+PROMPT_TYPE_TEXT = "text"
+PROMPT_TYPE_CHAT = "chat"
+DEFAULT_PROMPT_TYPE = PROMPT_TYPE_TEXT
+
+
 class PromptVersion(Resource):
     """Represents a specific version of a prompt.
 
@@ -35,7 +41,7 @@ class PromptVersion(Resource):
         updated_at: Timestamp when version was last updated.
 
     Example:
-        >>> version = client.get_prompt_production("my-prompt")
+        >>> version = client.get_prompt("my-prompt")
         >>> version.content
         'Hello, {{name}}! Welcome to {{app}}.'
         >>> version.variables
@@ -53,6 +59,7 @@ class PromptVersion(Resource):
     variables: list[str]
     status: str
     is_production: bool
+    metadata: dict[str, Any]
     created_at: str
     updated_at: str
 
@@ -70,6 +77,38 @@ class PromptVersion(Resource):
             self.is_production = False
         if not hasattr(self, "content"):
             self.content = ""
+        if not hasattr(self, "metadata") or self.metadata is None:
+            self.metadata = {}
+
+        # Parse prompt type from API (default to text)
+        self._prompt_type: str = self._data.get("prompt_type") or DEFAULT_PROMPT_TYPE
+
+    @property
+    def type(self) -> str:
+        """Get the prompt type.
+
+        Returns:
+            The prompt type from the API, defaults to "text".
+        """
+        return self._prompt_type
+
+    def get_metadata(self, key: str, default: Any = None) -> Any:
+        """Get a metadata value by key.
+
+        Args:
+            key: The metadata key to retrieve.
+            default: Default value if key not found.
+
+        Returns:
+            The metadata value or default.
+
+        Example:
+            >>> version.get_metadata("model")
+            'gpt-4'
+            >>> version.get_metadata("temperature", 0.7)
+            0.7
+        """
+        return self.metadata.get(key, default)
 
     def render(self, **variables: str) -> str:
         """Render the prompt content with provided variables.
@@ -89,7 +128,7 @@ class PromptVersion(Resource):
             ValidationError: If unknown variables are provided.
 
         Example:
-            >>> version = client.get_prompt_production("greeting")
+            >>> version = client.get_prompt("greeting")
             >>> version.render(name="Alice", greeting="Hello")
             'Hello, Alice!'
         """

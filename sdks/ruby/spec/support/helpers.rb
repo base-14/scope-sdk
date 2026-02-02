@@ -24,7 +24,16 @@ module TestHelpers
     }
   end
 
-  def prompt_version_response(prompt_id:, version_id:, version: 1, status: 'published', content: 'Hello {{name}}')
+  # rubocop:disable Metrics/ParameterLists
+  def prompt_version_response(
+    prompt_id:,
+    version_id:,
+    version: 1,
+    status: 'published',
+    content: 'Hello {{name}}',
+    prompt_type: 'text',
+    metadata: {}
+  )
     {
       'prompt_id' => prompt_id,
       'version_id' => version_id,
@@ -34,13 +43,15 @@ module TestHelpers
       'variables' => content.scan(/\{\{(\w+)\}\}/).flatten.uniq,
       'tags' => [],
       'status' => status,
+      'prompt_type' => prompt_type,
+      'metadata' => metadata,
       'created_at' => '2024-01-15T10:00:00Z',
       'created_by' => 'user_123',
       'promoted_at' => status == 'published' ? '2024-01-18T12:00:00Z' : nil,
-      'promoted_by' => status == 'published' ? 'user_456' : nil,
-      'metadata' => { 'description' => nil }
+      'promoted_by' => status == 'published' ? 'user_456' : nil
     }
   end
+  # rubocop:enable Metrics/ParameterLists
 end
 
 RSpec.configure do |config|

@@ -31,10 +31,13 @@ credentials = ApiKeyCredentials.from_env()
 # Create a client
 client = ScopeClient(credentials=credentials)
 
-# Fetch and render a prompt by name (or use prompt ID like "prompt_01HXYZ...")
-version = client.get_prompt_production("greeting-template")
+# Fetch and render a prompt by name (defaults to production version)
+version = client.get_prompt_version("greeting-template")
 rendered = version.render(name="Alice")
 print(rendered)  # "Hello, Alice!"
+
+# Access prompt metadata
+model = version.get_metadata("model")  # e.g., "gpt-4"
 ```
 
 ## Configuration
@@ -121,7 +124,7 @@ from scope_client import ScopeClient, ApiKeyCredentials
 credentials = ApiKeyCredentials.from_env()
 client = ScopeClient(credentials=credentials)
 
-# Get a prompt by name
+# Get a prompt resource by name (metadata about the prompt)
 prompt = client.get_prompt("my-greeting-prompt")
 print(f"Prompt: {prompt.name}")
 print(f"Has production: {prompt.has_production_version}")
@@ -129,31 +132,58 @@ print(f"Has production: {prompt.has_production_version}")
 # Or by ID
 prompt = client.get_prompt("prompt_01HXYZ...")
 
-# Get the production version by name
-version = client.get_prompt_production("my-greeting-prompt")
+# Get a prompt version (defaults to production)
+version = client.get_prompt_version("my-greeting-prompt")
 print(f"Content: {version.content}")
 print(f"Variables: {version.variables}")
+print(f"Type: {version.type}")  # "text" or "chat"
 
 # Get the latest version
-latest = client.get_prompt_latest("my-greeting-prompt")
+latest = client.get_prompt_version("my-greeting-prompt", label="latest")
 
-# Get a specific version
-specific = client.get_prompt_version("my-greeting-prompt", "version-123")
+# Get the production version explicitly
+production = client.get_prompt_version("my-greeting-prompt", label="production")
+
+# Get a specific version by ID
+specific = client.get_prompt_version("my-greeting-prompt", version="version-123")
 ```
 
 ### Rendering Prompts
 
 ```python
-# Render via the version object (using prompt name)
-version = client.get_prompt_production("greeting-template")
+# Render via the version object
+version = client.get_prompt_version("greeting-template")
 rendered = version.render(name="Alice", time_of_day="morning")
 print(rendered)  # "Good morning, Alice!"
 
-# Or render directly via the client (works with name or ID)
+# Or render directly via the client
 rendered = client.render_prompt(
     "greeting-template",  # prompt name
     {"name": "Bob", "time_of_day": "evening"},
-    version="production",  # or "latest" or a specific version ID
+    label="production",  # or "latest" (default: "production")
+)
+```
+
+### Accessing Metadata
+
+Prompt versions can include metadata (e.g., model configuration) set in the Scope UI:
+
+```python
+version = client.get_prompt_version("my-prompt")
+
+# Access all metadata
+print(version.metadata)  # {"model": "gpt-4", "temperature": 0.7}
+
+# Get specific metadata values
+model = version.get_metadata("model")  # "gpt-4"
+temperature = version.get_metadata("temperature", 0.7)  # with default
+max_tokens = version.get_metadata("max_tokens")  # None if not set
+
+# Use metadata with your LLM client
+response = openai.chat.completions.create(
+    model=version.get_metadata("model", "gpt-4"),
+    temperature=version.get_metadata("temperature", 0.7),
+    messages=[{"role": "user", "content": version.render(name="Alice")}]
 )
 ```
 
@@ -198,7 +228,7 @@ from scope_client import (
 )
 
 try:
-    version = client.get_prompt_production("my-prompt")
+    version = client.get_prompt_version("my-prompt")
     rendered = version.render(name="Alice")
 except InvalidCredentialsError:
     print("Invalid credentials (org_id, api_key, or api_secret)")

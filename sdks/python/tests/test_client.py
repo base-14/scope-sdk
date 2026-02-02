@@ -176,9 +176,45 @@ class TestScopeClientGetPrompt:
 
 
 class TestScopeClientGetPromptVersion:
-    """Tests for ScopeClient.get_prompt_latest and get_prompt_production."""
+    """Tests for ScopeClient.get_prompt_version method."""
 
-    def test_get_prompt_latest(
+    def test_defaults_to_production(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test that get_prompt_version defaults to production label."""
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        version = client.get_prompt_version("prompt-123")
+
+        assert isinstance(version, PromptVersion)
+        assert version.is_production is True
+
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/prompt-123/production" in str(request.url)
+
+    def test_with_production_label(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test getting production version with explicit label."""
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        version = client.get_prompt_version("prompt-123", label="production")
+
+        assert isinstance(version, PromptVersion)
+        assert version.is_production is True
+
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/prompt-123/production" in str(request.url)
+
+    def test_with_latest_label(
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
@@ -188,35 +224,33 @@ class TestScopeClientGetPromptVersion:
         httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
-        version = client.get_prompt_latest("prompt-123")
+        version = client.get_prompt_version("prompt-123", label="latest")
 
         assert isinstance(version, PromptVersion)
         assert version.id == "version-456"
         assert version.version_number == 1
 
-        # Check request URL
         request = httpx_mock.get_requests()[0]
         assert "/prompts/prompt-123/latest" in str(request.url)
 
-    def test_get_prompt_production(
+    def test_with_specific_version(
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
         mock_version_response: dict[str, Any],
     ):
-        """Test getting production version."""
+        """Test getting specific version."""
         httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
-        version = client.get_prompt_production("prompt-123")
+        version = client.get_prompt_version("prompt-123", version="version-456")
 
-        assert isinstance(version, PromptVersion)
-        assert version.is_production is True
+        assert version.id == "version-456"
 
         request = httpx_mock.get_requests()[0]
-        assert "/prompts/prompt-123/production" in str(request.url)
+        assert "/prompts/prompt-123/versions/version-456" in str(request.url)
 
-    def test_get_prompt_production_not_found(
+    def test_no_production_version_error(
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
@@ -229,26 +263,41 @@ class TestScopeClientGetPromptVersion:
 
         client = ScopeClient(config=config)
         with pytest.raises(NoProductionVersionError) as exc_info:
-            client.get_prompt_production("prompt-123")
+            client.get_prompt_version("prompt-123")
 
         assert exc_info.value.prompt_id == "prompt-123"
 
-    def test_get_prompt_version_specific(
+    def test_caches_response(
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
         mock_version_response: dict[str, Any],
     ):
-        """Test getting specific version."""
+        """Test that responses are cached."""
         httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
-        version = client.get_prompt_version("prompt-123", "version-456")
+        version1 = client.get_prompt_version("prompt-123")
+        version2 = client.get_prompt_version("prompt-123")
 
-        assert version.id == "version-456"
+        assert version1.id == version2.id
+        assert len(httpx_mock.get_requests()) == 1
 
-        request = httpx_mock.get_requests()[0]
-        assert "/prompts/prompt-123/versions/version-456" in str(request.url)
+    def test_bypasses_cache_when_disabled(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test bypassing cache."""
+        httpx_mock.add_response(json=mock_version_response)
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        client.get_prompt_version("prompt-123", cache=False)
+        client.get_prompt_version("prompt-123", cache=False)
+
+        assert len(httpx_mock.get_requests()) == 2
 
 
 class TestScopeClientListPrompts:
@@ -305,10 +354,30 @@ class TestScopeClientRenderPrompt:
         rendered = client.render_prompt(
             "prompt-123",
             {"name": "Alice", "app": "Scope"},
-            version="production",
+            label="production",
         )
 
         assert rendered == "Hello, Alice! Welcome to Scope."
+
+    def test_render_prompt_defaults_to_production(
+        self,
+        httpx_mock: HTTPXMock,
+        config: Configuration,
+        mock_version_response: dict[str, Any],
+    ):
+        """Test rendering defaults to production label."""
+        httpx_mock.add_response(json=mock_version_response)
+
+        client = ScopeClient(config=config)
+        rendered = client.render_prompt(
+            "prompt-123",
+            {"name": "Alice", "app": "Scope"},
+        )
+
+        assert rendered == "Hello, Alice! Welcome to Scope."
+
+        request = httpx_mock.get_requests()[0]
+        assert "/prompts/prompt-123/production" in str(request.url)
 
     def test_render_prompt_latest(
         self,
@@ -323,28 +392,10 @@ class TestScopeClientRenderPrompt:
         rendered = client.render_prompt(
             "prompt-123",
             {"name": "Bob", "app": "Test"},
-            version="latest",
+            label="latest",
         )
 
         assert rendered == "Hello, Bob! Welcome to Test."
-
-    def test_render_prompt_specific_version(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_version_response: dict[str, Any],
-    ):
-        """Test rendering specific version."""
-        httpx_mock.add_response(json=mock_version_response)
-
-        client = ScopeClient(config=config)
-        rendered = client.render_prompt(
-            "prompt-123",
-            {"name": "Charlie", "app": "Demo"},
-            version="version-456",
-        )
-
-        assert rendered == "Hello, Charlie! Welcome to Demo."
 
     def test_render_prompt_missing_variable(
         self,
@@ -432,7 +483,7 @@ class TestScopeClientGetPromptByName:
         request = httpx_mock.get_requests()[0]
         assert "/prompts/my-greeting-prompt" in str(request.url)
 
-    def test_get_prompt_latest_by_name(
+    def test_get_prompt_version_latest_by_name(
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
@@ -442,13 +493,13 @@ class TestScopeClientGetPromptByName:
         httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
-        version = client.get_prompt_latest("my-greeting-prompt")
+        version = client.get_prompt_version("my-greeting-prompt", label="latest")
 
         assert isinstance(version, PromptVersion)
         request = httpx_mock.get_requests()[0]
         assert "/prompts/my-greeting-prompt/latest" in str(request.url)
 
-    def test_get_prompt_production_by_name(
+    def test_get_prompt_version_production_by_name(
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
@@ -458,7 +509,7 @@ class TestScopeClientGetPromptByName:
         httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
-        version = client.get_prompt_production("my-greeting-prompt")
+        version = client.get_prompt_version("my-greeting-prompt")
 
         assert isinstance(version, PromptVersion)
         request = httpx_mock.get_requests()[0]
@@ -496,7 +547,7 @@ class TestScopeClientGetPromptByName:
         rendered = client.render_prompt(
             "my-greeting-prompt",
             {"name": "Alice", "app": "Scope"},
-            version="production",
+            label="production",
         )
 
         assert rendered == "Hello, Alice! Welcome to Scope."

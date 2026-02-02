@@ -45,9 +45,13 @@ credentials = ApiKeyCredentials.from_env()
 # Create a client
 client = ScopeClient(credentials=credentials)
 
-# Fetch and render a prompt
-version = client.get_prompt_production('my-prompt')
-rendered = version.render(customer_name='Alice', product='Widget')
+# Fetch and render a prompt (defaults to production version)
+version = client.get_prompt_version("my-prompt")
+rendered = version.render(customer_name="Alice", product="Widget")
+
+# Access prompt metadata (model config, etc.)
+model = version.get_metadata("model")  # e.g., "gpt-4"
+temperature = version.get_metadata("temperature", 0.7)  # with default
 ```
 
 ### Ruby
@@ -75,12 +79,16 @@ ScopeClient.configure do |config|
   config.credentials = credentials
 end
 
-# Fetch and render a prompt
+# Create a client
 client = ScopeClient.client
-rendered = client.render_prompt('my-prompt', {
-  customer_name: 'Alice',
-  product: 'Widget'
-})
+
+# Fetch and render a prompt (defaults to production version)
+version = client.get_prompt_version('my-prompt')
+rendered = version.render(customer_name: 'Alice', product: 'Widget')
+
+# Access prompt metadata (model config, etc.)
+model = version.get_metadata('model')  # e.g., 'gpt-4'
+temperature = version.get_metadata('temperature', 0.7)  # with default
 ```
 
 ## Authentication
