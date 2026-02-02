@@ -33,13 +33,21 @@ class TestScopeClientInit:
 
     def test_init_with_credentials(self, credentials: ApiKeyCredentials):
         """Test initialization with credentials directly."""
-        client = ScopeClient(credentials=credentials)
+        client = ScopeClient(
+            credentials=credentials,
+            base_url="https://api.scope.io",
+            auth_api_url="https://auth.scope.io",
+        )
         assert client.config.credentials.api_key == credentials.api_key
         assert client.config.credentials.org_id == credentials.org_id
 
     def test_init_with_global_config(self, credentials: ApiKeyCredentials):
         """Test initialization with global configuration."""
-        configure(credentials=credentials)
+        configure(
+            credentials=credentials,
+            base_url="https://api.scope.io",
+            auth_api_url="https://auth.scope.io",
+        )
         client = ScopeClient()
         assert client.config.credentials.api_key == credentials.api_key
         assert client.config.credentials.org_id == credentials.org_id
@@ -65,6 +73,8 @@ class TestScopeClientInit:
         """Test cache can be disabled."""
         config = Configuration(
             credentials=credentials,
+            base_url="https://api.scope.io",
+            auth_api_url="https://auth.scope.io",
             cache_enabled=False,
         )
         client = ScopeClient(config=config)
@@ -376,6 +386,8 @@ class TestScopeClientClearCache:
         """Test clear_cache with disabled cache doesn't error."""
         config = Configuration(
             credentials=credentials,
+            base_url="https://api.scope.io",
+            auth_api_url="https://auth.scope.io",
             cache_enabled=False,
         )
         client = ScopeClient(config=config)

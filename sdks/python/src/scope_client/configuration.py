@@ -58,8 +58,8 @@ class Configuration:
     """
 
     credentials: Optional["Credentials"] = field(default=None)
-    base_url: str = field(default="https://api.scope.io")
-    auth_api_url: str = field(default="https://auth.scope.io")
+    base_url: Optional[str] = field(default=None)
+    auth_api_url: Optional[str] = field(default=None)
     api_version: str = field(default="v1")
     timeout: int = field(default=30)
     open_timeout: int = field(default=10)
@@ -75,12 +75,12 @@ class Configuration:
     def __post_init__(self) -> None:
         """Load values from environment variables if not explicitly set."""
         # We need to use object.__setattr__ because the dataclass is frozen
-        if self.base_url == "https://api.scope.io":
+        if self.base_url is None:
             env_url = os.environ.get("SCOPE_API_URL")
             if env_url:
                 object.__setattr__(self, "base_url", env_url.rstrip("/"))
 
-        if self.auth_api_url == "https://auth.scope.io":
+        if self.auth_api_url is None:
             env_val = os.environ.get("SCOPE_AUTH_API_URL")
             if env_val:
                 object.__setattr__(self, "auth_api_url", env_val.rstrip("/"))
@@ -155,12 +155,20 @@ class Configuration:
         """Validate configuration.
 
         Raises:
-            ConfigurationError: If credentials are not set or invalid.
+            ConfigurationError: If required fields are not set or invalid.
         """
         from scope_client.errors import ConfigurationError
 
         if self.credentials is None:
             raise ConfigurationError("credentials is required")
+        if self.base_url is None:
+            raise ConfigurationError(
+                "base_url is required (set SCOPE_API_URL environment variable)"
+            )
+        if self.auth_api_url is None:
+            raise ConfigurationError(
+                "auth_api_url is required (set SCOPE_AUTH_API_URL environment variable)"
+            )
         self.credentials.validate()
 
 

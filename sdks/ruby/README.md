@@ -60,8 +60,8 @@ The SDK can load credentials from environment variables via `Credentials::ApiKey
 - `SCOPE_ORG_ID` - Your organization identifier (required)
 - `SCOPE_API_KEY` - Your API key ID (required)
 - `SCOPE_API_SECRET` - Your API key secret (required)
-- `SCOPE_API_URL` - Custom API base URL (optional)
-- `SCOPE_AUTH_API_URL` - Auth API URL for token exchange (optional)
+- `SCOPE_API_URL` - API base URL (required)
+- `SCOPE_AUTH_API_URL` - Auth API URL for token exchange (required)
 - `SCOPE_ENVIRONMENT` - Environment name (optional)
 - `SCOPE_TOKEN_REFRESH_BUFFER` - Seconds before token expiry to refresh (optional)
 

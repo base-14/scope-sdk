@@ -47,8 +47,8 @@ The SDK can load credentials from environment variables via `ApiKeyCredentials.f
 export SCOPE_ORG_ID="my-org"
 export SCOPE_API_KEY="key_abc123"
 export SCOPE_API_SECRET="secret_xyz"
-export SCOPE_API_URL="https://api.scope.io"       # Optional
-export SCOPE_AUTH_API_URL="https://auth.scope.io" # Optional
+export SCOPE_API_URL="https://api.scope.io"
+export SCOPE_AUTH_API_URL="https://auth.scope.io"
 export SCOPE_ENVIRONMENT="production"              # Optional
 export SCOPE_TOKEN_REFRESH_BUFFER="60"             # Optional
 ```
@@ -199,7 +199,7 @@ from scope_client import (
 
 try:
     version = client.get_prompt_production("my-prompt")
-    rendered = version.render({"name": "Alice"})
+    rendered = version.render(name="Alice")
 except InvalidCredentialsError:
     print("Invalid credentials (org_id, api_key, or api_secret)")
 except TokenRefreshError:

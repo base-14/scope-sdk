@@ -16,7 +16,8 @@ class TestConfiguration:
         """Test default configuration values."""
         config = Configuration()
         assert config.credentials is None
-        assert config.base_url == "https://api.scope.io"
+        assert config.base_url is None  # Required, no default
+        assert config.auth_api_url is None  # Required, no default
         assert config.api_version == "v1"
         assert config.timeout == 30
         assert config.open_timeout == 10
@@ -109,8 +110,12 @@ class TestConfiguration:
         assert config.api_url == "https://api.scope.io/api/v2"
 
     def test_validate_with_credentials(self, credentials: ApiKeyCredentials):
-        """Test validation passes with credentials."""
-        config = Configuration(credentials=credentials)
+        """Test validation passes with all required fields."""
+        config = Configuration(
+            credentials=credentials,
+            base_url="https://api.scope.io",
+            auth_api_url="https://auth.scope.io",
+        )
         config.validate()  # Should not raise
 
     def test_validate_without_credentials(self):
@@ -122,8 +127,24 @@ class TestConfiguration:
     def test_validate_with_incomplete_credentials(self):
         """Test validation fails with incomplete credentials."""
         credentials = ApiKeyCredentials(org_id="test_org")  # Missing api_key and api_secret
-        config = Configuration(credentials=credentials)
+        config = Configuration(
+            credentials=credentials,
+            base_url="https://api.scope.io",
+            auth_api_url="https://auth.scope.io",
+        )
         with pytest.raises(ConfigurationError, match="api_key is required"):
+            config.validate()
+
+    def test_validate_without_base_url(self, credentials: ApiKeyCredentials):
+        """Test validation fails without base_url."""
+        config = Configuration(credentials=credentials, auth_api_url="https://auth.scope.io")
+        with pytest.raises(ConfigurationError, match="base_url is required"):
+            config.validate()
+
+    def test_validate_without_auth_api_url(self, credentials: ApiKeyCredentials):
+        """Test validation fails without auth_api_url."""
+        config = Configuration(credentials=credentials, base_url="https://api.scope.io")
+        with pytest.raises(ConfigurationError, match="auth_api_url is required"):
             config.validate()
 
 
@@ -134,7 +155,8 @@ class TestConfigurationManager:
         """Test get returns default configuration."""
         config = ConfigurationManager.get()
         assert isinstance(config, Configuration)
-        assert config.base_url == "https://api.scope.io"
+        assert config.base_url is None  # Required, no default
+        assert config.auth_api_url is None  # Required, no default
 
     def test_set_and_get(self, credentials: ApiKeyCredentials):
         """Test setting and getting configuration."""

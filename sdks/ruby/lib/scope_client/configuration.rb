@@ -8,8 +8,8 @@ module ScopeClient
 
     DEFAULTS = {
       credentials: nil,
-      base_url: 'https://api.scope.io',
-      auth_api_url: 'https://auth.scope.io',
+      base_url: nil,
+      auth_api_url: nil,
       api_version: 'v1',
       timeout: 30,
       open_timeout: 10,
@@ -59,6 +59,12 @@ module ScopeClient
 
     def validate!
       raise ConfigurationError, 'credentials is required' if @credentials.nil?
+      raise ConfigurationError, 'base_url is required (set SCOPE_API_URL environment variable)' if @base_url.nil?
+
+      if @auth_api_url.nil?
+        raise ConfigurationError,
+              'auth_api_url is required (set SCOPE_AUTH_API_URL environment variable)'
+      end
 
       @credentials.validate!
     end
@@ -66,8 +72,8 @@ module ScopeClient
     private
 
     def load_from_environment!
-      @base_url = ENV.fetch('SCOPE_API_URL', @base_url)
-      @auth_api_url = ENV.fetch('SCOPE_AUTH_API_URL', @auth_api_url)
+      @base_url ||= ENV.fetch('SCOPE_API_URL', nil)
+      @auth_api_url ||= ENV.fetch('SCOPE_AUTH_API_URL', nil)
       @environment = ENV.fetch('SCOPE_ENVIRONMENT', @environment.to_s).to_sym
       @token_refresh_buffer = ENV.fetch('SCOPE_TOKEN_REFRESH_BUFFER', @token_refresh_buffer).to_i
     end

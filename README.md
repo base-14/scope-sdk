@@ -46,10 +46,8 @@ credentials = ApiKeyCredentials.from_env()
 client = ScopeClient(credentials=credentials)
 
 # Fetch and render a prompt
-rendered = client.render_prompt('my-prompt', {
-    'customer_name': 'Alice',
-    'product': 'Widget'
-})
+version = client.get_prompt_production('my-prompt')
+rendered = version.render(customer_name='Alice', product='Widget')
 ```
 
 ### Ruby
@@ -107,6 +105,8 @@ Generate API keys from the Scope UI under Settings > Applications.
 export SCOPE_ORG_ID="my-org"
 export SCOPE_API_KEY="key_abc123"
 export SCOPE_API_SECRET="secret_xyz"
+export SCOPE_API_URL="https://api.scope.io"
+export SCOPE_AUTH_API_URL="https://auth.scope.io"
 ```
 
 ## Documentation
