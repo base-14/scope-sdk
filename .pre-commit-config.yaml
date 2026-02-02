@@ -1,0 +1,59 @@
+# Pre-commit configuration for Scope SDKs
+# Install: cd sdks/python && make pre-commit-install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # ============================================================================
+  # Python SDK
+  # ============================================================================
+
+  # Ruff for Python linting and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^sdks/python/(src|tests)/
+      - id: ruff-format
+        files: ^sdks/python/(src|tests)/
+
+  # Local hooks for Python
+  - repo: local
+    hooks:
+      - id: python-mypy
+        name: python-mypy
+        entry: bash -c 'cd sdks/python && make typecheck'
+        language: system
+        types: [python]
+        files: ^sdks/python/src/
+        pass_filenames: false
+
+      - id: python-pytest
+        name: python-pytest
+        entry: bash -c 'cd sdks/python && make test'
+        language: system
+        types: [python]
+        files: ^sdks/python/(src|tests)/
+        pass_filenames: false
+        stages: [pre-commit]
+
+  # ============================================================================
+  # Ruby SDK
+  # ============================================================================
+
+      - id: ruby-rubocop
+        name: ruby-rubocop
+        entry: bash -c 'cd sdks/ruby && make lint'
+        language: system
+        types: [ruby]
+        files: ^sdks/ruby/
+        pass_filenames: false
+
+      - id: ruby-rspec
+        name: ruby-rspec
+        entry: bash -c 'cd sdks/ruby && make test'
+        language: system
+        types: [ruby]
+        files: ^sdks/ruby/(lib|spec)/
+        pass_filenames: false
+        stages: [pre-commit]

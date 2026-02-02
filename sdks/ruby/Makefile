@@ -1,4 +1,4 @@
-.PHONY: install test test-coverage lint lint-fix build release clean docs console ci all help
+.PHONY: install test test-coverage lint lint-fix build release clean docs console ci all help pre-commit-install pre-commit
 
 RUBY_VERSION := $(shell ruby -v 2>/dev/null | cut -d' ' -f2)
 GEM_VERSION := $(shell ruby -e "require './lib/scope_client/version'; puts ScopeClient::VERSION" 2>/dev/null)
@@ -42,3 +42,9 @@ console: ## Start interactive console
 ci: lint test ## Run CI checks (lint + test)
 
 all: install lint test build ## Run full build pipeline
+
+pre-commit-install: ## Install pre-commit hooks (requires Python pre-commit)
+	cd ../.. && pre-commit install
+
+pre-commit: ## Run pre-commit on all files
+	cd ../.. && pre-commit run --all-files

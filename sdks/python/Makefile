@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-coverage lint lint-fix format typecheck build clean venv
+.PHONY: help install install-dev test test-coverage lint lint-fix format typecheck build clean venv pre-commit-install pre-commit
 
 # Virtual environment directory
 VENV_DIR := .venv
@@ -35,20 +35,23 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  venv          Create virtual environment (recommended for local dev)"
-	@echo "  install       Install package in development mode"
-	@echo "  install-dev   Install package with development dependencies"
-	@echo "  test          Run tests"
-	@echo "  test-coverage Run tests with coverage report"
-	@echo "  lint          Run linting checks"
-	@echo "  lint-fix      Run linting and fix issues"
-	@echo "  format        Format code with ruff"
-	@echo "  typecheck     Run type checking with mypy"
-	@echo "  build         Build package (wheel and sdist)"
-	@echo "  clean         Remove build artifacts"
+	@echo "  venv              Create virtual environment (recommended for local dev)"
+	@echo "  install           Install package in development mode"
+	@echo "  install-dev       Install package with development dependencies"
+	@echo "  test              Run tests"
+	@echo "  test-coverage     Run tests with coverage report"
+	@echo "  lint              Run linting checks"
+	@echo "  lint-fix          Run linting and fix issues"
+	@echo "  format            Format code with ruff"
+	@echo "  typecheck         Run type checking with mypy"
+	@echo "  build             Build package (wheel and sdist)"
+	@echo "  clean             Remove build artifacts"
+	@echo "  pre-commit-install Install pre-commit hooks"
+	@echo "  pre-commit        Run pre-commit on all files"
 	@echo ""
 	@echo "Local Development (Homebrew Python):"
 	@echo "  make venv && source .venv/bin/activate && make install-dev"
+	@echo "  make pre-commit-install  # Enable pre-commit hooks"
 	@echo ""
 
 # Install package in development mode
@@ -121,3 +124,11 @@ check: lint typecheck test
 # CI target - all checks with coverage
 ci: lint typecheck test-coverage
 	@echo "CI checks complete!"
+
+# Install pre-commit hooks (run from repo root)
+pre-commit-install:
+	cd ../.. && $(CURDIR)/$(VENV_DIR)/bin/python -m pre_commit install
+
+# Run pre-commit on all files (run from repo root)
+pre-commit:
+	cd ../.. && $(CURDIR)/$(VENV_DIR)/bin/python -m pre_commit run --all-files
