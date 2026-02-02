@@ -70,7 +70,7 @@ from scope_client.errors import (
     TokenRefreshError,
     ValidationError,
 )
-from scope_client.resources import Prompt, PromptVersion, Resource
+from scope_client.resources import PromptVersion, Resource
 
 if TYPE_CHECKING:
     pass
@@ -88,7 +88,6 @@ __all__ = [
     "CredentialsProtocol",
     # Resources
     "Resource",
-    "Prompt",
     "PromptVersion",
     # Errors
     "ScopeError",

@@ -4,19 +4,19 @@
 This example demonstrates how to handle various errors that can occur
 when using the SDK.
 
-Before running this example, set your API key:
-    export SCOPE_API_KEY="sk_your_api_key"
+Before running this example, set your environment variables:
+    export SCOPE_ORG_ID="your-org-id"
+    export SCOPE_API_KEY="your-api-key"
+    export SCOPE_API_SECRET="your-api-secret"
 """
-
-import os
-import sys
 
 import scope_client
 from scope_client import (
+    ApiKeyCredentials,
     AuthenticationError,
     AuthorizationError,
+    ConfigurationError,
     ConnectionError,
-    MissingApiKeyError,
     MissingVariableError,
     NoProductionVersionError,
     NotFoundError,
@@ -31,46 +31,49 @@ from scope_client import (
 def demonstrate_error_handling() -> None:
     """Demonstrate various error handling scenarios."""
 
-    # Example 1: Missing API Key Error
-    print("1. Missing API Key Error")
+    # Example 1: Configuration Error
+    print("1. Configuration Error")
     print("-" * 40)
     try:
         scope_client.reset_configuration()
-        # Clear any environment variable
-        if "SCOPE_API_KEY" in os.environ:
-            del os.environ["SCOPE_API_KEY"]
-        # This will raise MissingApiKeyError
+        # This will raise ConfigurationError because no credentials are configured
         client = scope_client.client()
-    except MissingApiKeyError as e:
-        print(f"   Caught MissingApiKeyError: {e}")
-        print("   Solution: Set SCOPE_API_KEY environment variable or pass api_key to configure()")
+    except ConfigurationError as e:
+        print(f"   Caught ConfigurationError: {e}")
+        print("   Solution: Set credentials via configure() or pass to client()")
     print()
 
     # Now configure properly for remaining examples
-    api_key = os.environ.get("SCOPE_API_KEY", "sk_test_key")
-    scope_client.configure(api_key=api_key)
-    client = scope_client.client()
+    try:
+        credentials = ApiKeyCredentials.from_env()
+        scope_client.configure(credentials=credentials)
+        client = scope_client.client()
+    except ConfigurationError:
+        print("   Cannot continue - credentials not configured")
+        return
 
     # Example 2: Not Found Error
     print("2. Not Found Error")
     print("-" * 40)
     try:
-        prompt = client.get_prompt("nonexistent-prompt-12345")
+        version = client.get_prompt_version("nonexistent-prompt-12345")
     except NotFoundError as e:
         print(f"   Caught NotFoundError: {e.message}")
         print(f"   HTTP Status: {e.http_status}")
         print(f"   Request ID: {e.request_id}")
+    except NoProductionVersionError as e:
+        print(f"   Caught NoProductionVersionError: {e.message}")
     print()
 
     # Example 3: No Production Version Error
     print("3. No Production Version Error")
     print("-" * 40)
     try:
-        version = client.get_prompt_production("prompt-without-production")
+        version = client.get_prompt_version("prompt-without-production")
     except NoProductionVersionError as e:
         print(f"   Caught NoProductionVersionError: {e.message}")
         print(f"   Prompt ID: {e.prompt_id}")
-        print("   Solution: Either publish a version to production or use get_prompt_latest()")
+        print("   Solution: Either publish a version to production or use label='latest'")
     except NotFoundError:
         print("   (Prompt not found - this is expected in the demo)")
     print()
@@ -93,7 +96,7 @@ def demonstrate_error_handling() -> None:
         })
 
         # Try to render without all variables
-        rendered = mock_version.render({"name": "Alice"})
+        rendered = mock_version.render(name="Alice")
     except MissingVariableError as e:
         print(f"   Caught MissingVariableError: {e.message}")
         print(f"   Missing variables: {e.missing_variables}")
@@ -116,10 +119,10 @@ def demonstrate_error_handling() -> None:
         })
 
         # Try to render with unknown variables
-        rendered = mock_version.render({
-            "name": "Alice",
-            "unknown_var": "value",
-        })
+        rendered = mock_version.render(
+            name="Alice",
+            unknown_var="value",
+        )
     except ValidationError as e:
         print(f"   Caught ValidationError: {e.message}")
         print("   Solution: Only provide declared variables")
@@ -131,11 +134,11 @@ def demonstrate_error_handling() -> None:
     print("   In production, you might handle rate limits like this:")
     print("""
     try:
-        result = client.get_prompt("my-prompt")
+        result = client.get_prompt_version("my-prompt")
     except RateLimitError as e:
         print(f"Rate limited. Retry after: {e.retry_after}s")
         time.sleep(e.retry_after)
-        result = client.get_prompt("my-prompt")
+        result = client.get_prompt_version("my-prompt")
     """)
     print()
 
@@ -144,12 +147,12 @@ def demonstrate_error_handling() -> None:
     print("-" * 40)
     print("""
     try:
-        version = client.get_prompt_production("my-prompt")
-        rendered = version.render({"name": "User"})
+        version = client.get_prompt_version("my-prompt")
+        rendered = version.render(name="User")
         print(rendered)
 
     except AuthenticationError:
-        print("Invalid API key. Check your SCOPE_API_KEY.")
+        print("Invalid API key. Check your credentials.")
         sys.exit(1)
 
     except AuthorizationError:
@@ -162,8 +165,8 @@ def demonstrate_error_handling() -> None:
     except NoProductionVersionError:
         # Fallback to latest version
         print("No production version, using latest...")
-        version = client.get_prompt_latest("my-prompt")
-        rendered = version.render({"name": "User"})
+        version = client.get_prompt_version("my-prompt", label="latest")
+        rendered = version.render(name="User")
 
     except MissingVariableError as e:
         print(f"Missing variables: {e.missing_variables}")

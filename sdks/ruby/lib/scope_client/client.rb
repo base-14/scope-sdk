@@ -15,22 +15,6 @@ module ScopeClient
       @cache = Cache.new(default_ttl: @config.cache_ttl) if @config.cache_enabled
     end
 
-    # Get prompt metadata by ID or name
-    # @param prompt_id [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-    #   If the value starts with 'prompt_' and is a valid ULID, it's treated
-    #   as an ID; otherwise, it's treated as a name.
-    # @param options [Hash] Options hash
-    # @option options [Boolean] :cache Whether to use cache (default: true)
-    # @option options [Integer] :cache_ttl Custom cache TTL in seconds
-    # @return [Resources::Prompt] The prompt resource
-    def get_prompt(prompt_id, **options)
-      cache_key = "prompt:#{prompt_id}"
-      fetch_with_cache(cache_key, options) do
-        data = connection.get("prompts/#{prompt_id}")
-        Resources::Prompt.new(data, client: self)
-      end
-    end
-
     # Get a prompt version by name
     # @param name [String] The ID (e.g., 'prompt_01ABC...') or name of the prompt.
     #   If the value starts with 'prompt_' and is a valid ULID, it's treated
@@ -52,24 +36,6 @@ module ScopeClient
       raise NoProductionVersionError, "No production version exists for prompt #{name}" if production_label?(label)
 
       raise
-    end
-
-    # List prompts with pagination and filters
-    # @param params [Hash] Query parameters
-    # @option params [Integer] :limit Number of items to return (max 100)
-    # @option params [String] :cursor Pagination cursor
-    # @option params [String] :search Search term for name and description
-    # @option params [String] :tags Comma-separated list of tags
-    # @option params [String] :status Filter by status (has_production_version, draft_only)
-    # @option params [String] :sort_by Field to sort by (name, updated_at, created_at)
-    # @option params [String] :sort_direction Sort direction (asc, desc)
-    # @return [Hash] Hash with :data (array of Prompt resources) and :meta (pagination info)
-    def list_prompts(**params)
-      data = connection.get('prompts', params)
-      {
-        data: data['data'].map { |item| Resources::Prompt.new(item, client: self) },
-        meta: data['meta']
-      }
     end
 
     # Render a prompt with variable substitution

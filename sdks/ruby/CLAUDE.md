@@ -132,8 +132,7 @@ The SDK maps to these Scope API endpoints:
 
 | SDK Method | HTTP Endpoint |
 |------------|---------------|
-| `get_prompt(name)` | GET /prompts/{name} |
 | `get_prompt_version(name)` | GET /prompts/{name}/production |
 | `get_prompt_version(name, label: :latest)` | GET /prompts/{name}/latest |
 | `get_prompt_version(name, version: vid)` | GET /prompts/{name}/versions/{vid} |
-| `list_prompts(**params)` | GET /prompts |
+| `render_prompt(name, variables)` | GET /prompts/{name}/production |

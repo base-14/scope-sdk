@@ -41,7 +41,7 @@ class PromptVersion(Resource):
         updated_at: Timestamp when version was last updated.
 
     Example:
-        >>> version = client.get_prompt("my-prompt")
+        >>> version = client.get_prompt_version("my-prompt")
         >>> version.content
         'Hello, {{name}}! Welcome to {{app}}.'
         >>> version.variables

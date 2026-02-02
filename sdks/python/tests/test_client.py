@@ -13,13 +13,11 @@ from scope_client import (
     reset_configuration,
 )
 from scope_client.errors import (
-    AuthenticationError,
     ConfigurationError,
     MissingVariableError,
     NoProductionVersionError,
-    NotFoundError,
 )
-from scope_client.resources import Prompt, PromptVersion
+from scope_client.resources import PromptVersion
 
 
 class TestScopeClientInit:
@@ -87,92 +85,6 @@ class TestScopeClientInit:
         assert "ScopeClient" in repr_str
         assert "api.test.scope.io" in repr_str
         assert "cache=enabled" in repr_str
-
-
-class TestScopeClientGetPrompt:
-    """Tests for ScopeClient.get_prompt method."""
-
-    def test_get_prompt_success(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_prompt_response: dict[str, Any],
-    ):
-        """Test successful prompt fetch."""
-        httpx_mock.add_response(json=mock_prompt_response)
-
-        client = ScopeClient(config=config)
-        prompt = client.get_prompt("prompt-123")
-
-        assert isinstance(prompt, Prompt)
-        assert prompt.id == "prompt-123"
-        assert prompt.name == "Test Prompt"
-
-    def test_get_prompt_not_found(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-    ):
-        """Test prompt not found error."""
-        httpx_mock.add_response(
-            status_code=404,
-            json={"error": {"message": "Prompt not found"}},
-        )
-
-        client = ScopeClient(config=config)
-        with pytest.raises(NotFoundError):
-            client.get_prompt("nonexistent")
-
-    def test_get_prompt_auth_error(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-    ):
-        """Test authentication error."""
-        httpx_mock.add_response(
-            status_code=401,
-            json={"error": {"message": "Invalid API key"}},
-        )
-
-        client = ScopeClient(config=config)
-        with pytest.raises(AuthenticationError):
-            client.get_prompt("prompt-123")
-
-    def test_get_prompt_caching(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_prompt_response: dict[str, Any],
-    ):
-        """Test that prompts are cached."""
-        httpx_mock.add_response(json=mock_prompt_response)
-
-        client = ScopeClient(config=config)
-
-        # First call
-        prompt1 = client.get_prompt("prompt-123")
-        # Second call - should use cache
-        prompt2 = client.get_prompt("prompt-123")
-
-        assert prompt1.id == prompt2.id
-        assert len(httpx_mock.get_requests()) == 1  # Only one HTTP request
-
-    def test_get_prompt_bypass_cache(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_prompt_response: dict[str, Any],
-    ):
-        """Test bypassing cache."""
-        httpx_mock.add_response(json=mock_prompt_response)
-        httpx_mock.add_response(json=mock_prompt_response)
-
-        client = ScopeClient(config=config)
-
-        client.get_prompt("prompt-123")
-        client.get_prompt("prompt-123", cache=False)
-
-        assert len(httpx_mock.get_requests()) == 2
 
 
 class TestScopeClientGetPromptVersion:
@@ -300,44 +212,6 @@ class TestScopeClientGetPromptVersion:
         assert len(httpx_mock.get_requests()) == 2
 
 
-class TestScopeClientListPrompts:
-    """Tests for ScopeClient.list_prompts method."""
-
-    def test_list_prompts(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_list_response: dict[str, Any],
-    ):
-        """Test listing prompts."""
-        httpx_mock.add_response(json=mock_list_response)
-
-        client = ScopeClient(config=config)
-        result = client.list_prompts()
-
-        assert "data" in result
-        assert "meta" in result
-        assert len(result["data"]) == 2
-        assert all(isinstance(p, Prompt) for p in result["data"])
-        assert result["meta"]["total"] == 2
-
-    def test_list_prompts_with_params(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_list_response: dict[str, Any],
-    ):
-        """Test listing prompts with query parameters."""
-        httpx_mock.add_response(json=mock_list_response)
-
-        client = ScopeClient(config=config)
-        client.list_prompts(page=2, per_page=10)
-
-        request = httpx_mock.get_requests()[0]
-        assert "page=2" in str(request.url)
-        assert "per_page=10" in str(request.url)
-
-
 class TestScopeClientRenderPrompt:
     """Tests for ScopeClient.render_prompt method."""
 
@@ -418,17 +292,17 @@ class TestScopeClientClearCache:
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
-        mock_prompt_response: dict[str, Any],
+        mock_version_response: dict[str, Any],
     ):
         """Test clearing cache."""
-        httpx_mock.add_response(json=mock_prompt_response)
-        httpx_mock.add_response(json=mock_prompt_response)
+        httpx_mock.add_response(json=mock_version_response)
+        httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
 
-        client.get_prompt("prompt-123")
+        client.get_prompt_version("prompt-123")
         client.clear_cache()
-        client.get_prompt("prompt-123")
+        client.get_prompt_version("prompt-123")
 
         # Two requests because cache was cleared
         assert len(httpx_mock.get_requests()) == 2
@@ -466,23 +340,6 @@ class TestScopeClientContextManager:
 class TestScopeClientGetPromptByName:
     """Tests for fetching prompts by name instead of ID."""
 
-    def test_get_prompt_by_name(
-        self,
-        httpx_mock: HTTPXMock,
-        config: Configuration,
-        mock_prompt_response: dict[str, Any],
-    ):
-        """Test fetching prompt by name."""
-        httpx_mock.add_response(json=mock_prompt_response)
-
-        client = ScopeClient(config=config)
-        prompt = client.get_prompt("my-greeting-prompt")
-
-        assert isinstance(prompt, Prompt)
-        # Verify the request URL used the name
-        request = httpx_mock.get_requests()[0]
-        assert "/prompts/my-greeting-prompt" in str(request.url)
-
     def test_get_prompt_version_latest_by_name(
         self,
         httpx_mock: HTTPXMock,
@@ -519,17 +376,17 @@ class TestScopeClientGetPromptByName:
         self,
         httpx_mock: HTTPXMock,
         config: Configuration,
-        mock_prompt_response: dict[str, Any],
+        mock_version_response: dict[str, Any],
     ):
         """Test that cache keys work correctly with names."""
-        httpx_mock.add_response(json=mock_prompt_response)
+        httpx_mock.add_response(json=mock_version_response)
 
         client = ScopeClient(config=config)
 
         # First call with name
-        client.get_prompt("my-greeting-prompt")
+        client.get_prompt_version("my-greeting-prompt")
         # Second call with same name - should use cache
-        client.get_prompt("my-greeting-prompt")
+        client.get_prompt_version("my-greeting-prompt")
 
         # Only one HTTP request should be made
         assert len(httpx_mock.get_requests()) == 1

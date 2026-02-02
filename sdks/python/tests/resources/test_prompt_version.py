@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from scope_client.errors import MissingVariableError, ValidationError
-from scope_client.resources import Prompt, PromptVersion, Resource
+from scope_client.resources import PromptVersion, Resource
 
 
 class TestResource:
@@ -143,53 +143,6 @@ class TestResource:
 
         assert isinstance(resource.meta, dict)
         assert not isinstance(resource.meta, Resource)
-
-
-class TestPrompt:
-    """Tests for Prompt resource."""
-
-    def test_prompt_creation(self, prompt_data: dict[str, Any]):
-        """Test creating a prompt resource."""
-        prompt = Prompt(prompt_data)
-
-        assert prompt.id == "prompt-123"
-        assert prompt.name == "Test Prompt"
-        assert prompt.description == "A test prompt for unit tests"
-        assert prompt.has_production_version is True
-
-    def test_prompt_defaults(self):
-        """Test prompt default values."""
-        prompt = Prompt({"id": "123", "name": "Test"})
-
-        assert prompt.description is None
-        assert prompt.has_production_version is False
-
-    def test_prompt_repr(self, prompt_data: dict[str, Any]):
-        """Test prompt string representation."""
-        prompt = Prompt(prompt_data)
-        repr_str = repr(prompt)
-
-        assert "Prompt" in repr_str
-        assert "prompt-123" in repr_str
-        assert "Test Prompt" in repr_str
-
-    def test_latest_version_without_client(self, prompt_data: dict[str, Any]):
-        """Test latest_version raises without client."""
-        prompt = Prompt(prompt_data)
-        with pytest.raises(RuntimeError, match="Client reference required"):
-            prompt.latest_version()
-
-    def test_production_version_without_client(self, prompt_data: dict[str, Any]):
-        """Test production_version raises without client."""
-        prompt = Prompt(prompt_data)
-        with pytest.raises(RuntimeError, match="Client reference required"):
-            prompt.production_version()
-
-    def test_version_without_client(self, prompt_data: dict[str, Any]):
-        """Test version raises without client."""
-        prompt = Prompt(prompt_data)
-        with pytest.raises(RuntimeError, match="Client reference required"):
-            prompt.version("v1")
 
 
 class TestPromptVersion:

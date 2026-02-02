@@ -114,7 +114,7 @@ client = scope_client.client()
 
 ## Usage
 
-### Fetching Prompts
+### Fetching Prompt Versions
 
 All prompt methods accept either a prompt ID (e.g., `prompt_01HXYZ...`) or a prompt name. The API auto-detects: if the value starts with `prompt_` and is a valid ULID, it's treated as an ID; otherwise, it's treated as a name.
 
@@ -123,14 +123,6 @@ from scope_client import ScopeClient, ApiKeyCredentials
 
 credentials = ApiKeyCredentials.from_env()
 client = ScopeClient(credentials=credentials)
-
-# Get a prompt resource by name (metadata about the prompt)
-prompt = client.get_prompt("my-greeting-prompt")
-print(f"Prompt: {prompt.name}")
-print(f"Has production: {prompt.has_production_version}")
-
-# Or by ID
-prompt = client.get_prompt("prompt_01HXYZ...")
 
 # Get a prompt version (defaults to production)
 version = client.get_prompt_version("my-greeting-prompt")
@@ -187,27 +179,16 @@ response = openai.chat.completions.create(
 )
 ```
 
-### Listing Prompts
-
-```python
-result = client.list_prompts(page=1, per_page=20)
-
-for prompt in result["data"]:
-    print(f"- {prompt.name} ({prompt.id})")
-
-print(f"Total: {result['meta']['total']}")
-```
-
 ### Caching
 
 Caching is enabled by default. You can control it per-request:
 
 ```python
 # Bypass cache for this request
-prompt = client.get_prompt("my-prompt", cache=False)
+version = client.get_prompt_version("my-prompt", cache=False)
 
 # Use custom TTL for this request
-prompt = client.get_prompt("my-prompt", cache_ttl=60)
+version = client.get_prompt_version("my-prompt", cache_ttl=60)
 
 # Clear all cached data
 client.clear_cache()
@@ -278,7 +259,7 @@ from scope_client import ScopeClient, ApiKeyCredentials
 
 credentials = ApiKeyCredentials.from_env()
 with ScopeClient(credentials=credentials) as client:
-    prompt = client.get_prompt("my-prompt")
+    version = client.get_prompt_version("my-prompt")
     # Connection is automatically closed when exiting the context
 ```
 

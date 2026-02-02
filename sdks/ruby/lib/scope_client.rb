@@ -11,7 +11,6 @@ require_relative 'scope_client/middleware/authentication'
 require_relative 'scope_client/middleware/telemetry'
 require_relative 'scope_client/connection'
 require_relative 'scope_client/resources/base'
-require_relative 'scope_client/resources/prompt'
 require_relative 'scope_client/resources/prompt_version'
 require_relative 'scope_client/client'
 

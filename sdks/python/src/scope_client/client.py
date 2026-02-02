@@ -10,7 +10,6 @@ from scope_client.cache import Cache
 from scope_client.configuration import Configuration, ConfigurationManager
 from scope_client.connection import Connection
 from scope_client.errors import NoProductionVersionError, NotFoundError
-from scope_client.resources.prompt import Prompt
 from scope_client.resources.prompt_version import PromptVersion
 
 if TYPE_CHECKING:
@@ -54,10 +53,6 @@ class ScopeClient:
         >>> import scope_client
         >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
         >>> client = scope_client.client()
-
-        >>> # Fetch a prompt
-        >>> prompt = client.get_prompt("my-prompt")
-        >>> print(prompt.name)
 
         >>> # Get production version and render
         >>> version = client.get_prompt_version("my-prompt")
@@ -107,40 +102,6 @@ class ScopeClient:
             The Configuration instance used by this client.
         """
         return self._config
-
-    def get_prompt(self, prompt_id: str, **options: Any) -> Prompt:
-        """Fetch a prompt by ID or name.
-
-        Args:
-            prompt_id: The ID (e.g., 'prompt_01ABC...') or name of the prompt.
-                If the value starts with 'prompt_' and is a valid ULID, it's
-                treated as an ID; otherwise, it's treated as a name.
-            **options: Request options.
-                cache: Whether to use cache (default: True if cache enabled).
-                cache_ttl: Custom TTL for this request in seconds.
-
-        Returns:
-            Prompt: The fetched prompt resource.
-
-        Raises:
-            NotFoundError: If prompt not found.
-            AuthenticationError: If authentication fails.
-            ApiError: On other API errors.
-
-        Example:
-            >>> # Fetch by ID
-            >>> prompt = client.get_prompt("prompt_01HXYZ...")
-            >>> # Or fetch by name
-            >>> prompt = client.get_prompt("my-prompt")
-            >>> print(prompt.name)
-        """
-        cache_key = f"prompt:{prompt_id}"
-
-        def fetch() -> Prompt:
-            data = self._connection.get(f"prompts/{prompt_id}")
-            return Prompt(data, client=self)
-
-        return self._fetch_with_cache(cache_key, fetch, **options)
 
     def get_prompt_version(
         self,
@@ -212,40 +173,6 @@ class ScopeClient:
         else:
             # Default to production
             return (f"prompt:{name}:production", f"prompts/{name}/production")
-
-    def list_prompts(self, **params: Any) -> dict[str, Any]:
-        """List all prompts.
-
-        Args:
-            **params: Query parameters for filtering/pagination.
-                page: Page number (default: 1).
-                per_page: Items per page (default: 20).
-                sort: Sort field (e.g., 'name', 'created_at').
-                order: Sort order ('asc' or 'desc').
-
-        Returns:
-            Dictionary with 'data' (list of Prompt) and 'meta' (pagination info).
-
-        Raises:
-            AuthenticationError: If authentication fails.
-            ApiError: On API errors.
-
-        Example:
-            >>> result = client.list_prompts(page=1, per_page=10)
-            >>> for prompt in result["data"]:
-            ...     print(prompt.name)
-            >>> print(f"Total: {result['meta']['total']}")
-        """
-        # List operations are not cached
-        response = self._connection.get("prompts", params=params or None)
-
-        # Convert data items to Prompt resources
-        prompts = [Prompt(item, client=self) for item in response.get("data", [])]
-
-        return {
-            "data": prompts,
-            "meta": response.get("meta", {}),
-        }
 
     def render_prompt(
         self,

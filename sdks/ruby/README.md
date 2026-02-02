@@ -106,7 +106,7 @@ end
 
 ## API Reference
 
-### Fetching Prompts
+### Fetching Prompt Versions
 
 All prompt methods accept either a prompt ID (e.g., `prompt_01HXYZ...`) or a prompt name. The API auto-detects: if the value starts with `prompt_` and is a valid ULID, it's treated as an ID; otherwise, it's treated as a name.
 
@@ -125,19 +125,6 @@ production = client.get_prompt_version('my-greeting-prompt', label: :production)
 
 # Get specific version by ID
 specific = client.get_prompt_version('my-greeting-prompt', version: 'version-123')
-
-# Get prompt metadata (without version content)
-prompt = client.get_prompt('my-greeting-prompt')
-puts prompt.name
-puts prompt.production_version?
-
-# List prompts with filters
-results = client.list_prompts(
-  search: 'onboarding',
-  tags: 'email,marketing',
-  status: 'has_production_version',
-  limit: 20
-)
 ```
 
 ### Rendering Prompts

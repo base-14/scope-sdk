@@ -75,35 +75,6 @@ RSpec.describe ScopeClient::Client do
     end
   end
 
-  describe '#get_prompt' do
-    let(:prompt_id) { 'prompt_123' }
-
-    before do
-      stub_scope_api(:get, "/prompts/#{prompt_id}", response_body: prompt_response(prompt_id: prompt_id))
-    end
-
-    it 'fetches and returns the prompt' do
-      result = client.get_prompt(prompt_id)
-
-      expect(result).to be_a(ScopeClient::Resources::Prompt)
-      expect(result.prompt_id).to eq(prompt_id)
-    end
-
-    it 'caches the result' do
-      client.get_prompt(prompt_id)
-      client.get_prompt(prompt_id)
-
-      expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}").once
-    end
-
-    it 'skips cache when cache: false' do
-      client.get_prompt(prompt_id)
-      client.get_prompt(prompt_id, cache: false)
-
-      expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}").twice
-    end
-  end
-
   describe '#get_prompt_version' do
     let(:prompt_id) { 'prompt_123' }
 
@@ -263,31 +234,6 @@ RSpec.describe ScopeClient::Client do
     end
   end
 
-  describe '#list_prompts' do
-    before do
-      stub_scope_api(
-        :get,
-        '/prompts',
-        response_body: {
-          'data' => [
-            prompt_response(prompt_id: 'prompt_1', name: 'Prompt 1'),
-            prompt_response(prompt_id: 'prompt_2', name: 'Prompt 2')
-          ],
-          'meta' => { 'next_cursor' => nil, 'has_more' => false }
-        }
-      )
-    end
-
-    it 'returns paginated list of prompts' do
-      result = client.list_prompts
-
-      expect(result[:data]).to be_an(Array)
-      expect(result[:data].length).to eq(2)
-      expect(result[:data].first).to be_a(ScopeClient::Resources::Prompt)
-      expect(result[:meta]['has_more']).to be(false)
-    end
-  end
-
   describe '#render_prompt' do
     let(:prompt_id) { 'prompt_123' }
 
@@ -342,44 +288,24 @@ RSpec.describe ScopeClient::Client do
     let(:prompt_id) { 'prompt_123' }
 
     before do
-      stub_scope_api(:get, "/prompts/#{prompt_id}", response_body: prompt_response(prompt_id: prompt_id))
+      stub_scope_api(
+        :get,
+        "/prompts/#{prompt_id}/production",
+        response_body: prompt_version_response(prompt_id: prompt_id, version_id: 'ver_456')
+      )
     end
 
     it 'clears all cached data' do
-      client.get_prompt(prompt_id)
+      client.get_prompt_version(prompt_id)
       client.clear_cache
-      client.get_prompt(prompt_id)
+      client.get_prompt_version(prompt_id)
 
-      expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}").twice
+      expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_id}/production").twice
     end
   end
 
   describe 'fetching prompts by name' do
     let(:prompt_name) { 'my-greeting-prompt' }
-
-    describe '#get_prompt' do
-      before do
-        stub_scope_api(
-          :get,
-          "/prompts/#{prompt_name}",
-          response_body: prompt_response(prompt_id: 'prompt_123', name: prompt_name)
-        )
-      end
-
-      it 'fetches prompt by name' do
-        result = client.get_prompt(prompt_name)
-
-        expect(result).to be_a(ScopeClient::Resources::Prompt)
-        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}")
-      end
-
-      it 'caches result using name as key' do
-        client.get_prompt(prompt_name)
-        client.get_prompt(prompt_name)
-
-        expect(WebMock).to have_requested(:get, "https://api.scope.io/api/v1/prompts/#{prompt_name}").once
-      end
-    end
 
     describe '#get_prompt_version with latest label' do
       before do
