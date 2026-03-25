@@ -48,9 +48,7 @@ module ScopeClient
 
     def to_h
       synchronize do
-        result = ATTRIBUTES.each_with_object({}) do |attr, hash|
-          hash[attr] = public_send(attr)
-        end
+        result = ATTRIBUTES.to_h { |attr| [attr, public_send(attr)] }
         # Convert credentials to hash if present
         result[:credentials] = @credentials&.to_h
         result
