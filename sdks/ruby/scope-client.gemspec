@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "Ruby SDK for Scope Platform"
   spec.description   = "Read-only Ruby client for managing and rendering prompts from the Scope platform"
   spec.homepage      = "https://github.com/base14/scope-sdk"
-  spec.license       = "BSD-3-Clause"
+  spec.license       = "MIT"
 
   spec.required_ruby_version = ">= 2.7.0"
 
