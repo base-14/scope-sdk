@@ -125,4 +125,4 @@ export SCOPE_AUTH_API_URL="https://auth.scope.io"
 
 ## License
 
-BSD-3-Clause. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).

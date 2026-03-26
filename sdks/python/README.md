@@ -309,4 +309,4 @@ make format
 
 ## License
 
-BSD-3-Clause. See [LICENSE](../../LICENSE).
+MIT. See [LICENSE](../../LICENSE).
