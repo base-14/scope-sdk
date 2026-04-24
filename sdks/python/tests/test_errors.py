@@ -73,8 +73,8 @@ class TestConfigurationErrors:
         """Test MissingApiKeyError."""
         error = MissingApiKeyError()
         assert isinstance(error, ConfigurationError)
-        assert "API key is required" in str(error)
-        assert "SCOPE_API_KEY" in str(error)
+        assert "Client credentials are required" in str(error)
+        assert "SCOPE_CLIENT_ID" in str(error)
 
 
 class TestApiErrors:

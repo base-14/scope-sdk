@@ -17,15 +17,15 @@ pip install git+https://github.com/base14/scope-sdk.git#subdirectory=sdks/python
 ## Quick Start
 
 ```python
-from scope_client import ScopeClient, ApiKeyCredentials
+from scope_client import ScopeClient, ClientCredentials
 
 # Create credentials from environment variables
-credentials = ApiKeyCredentials.from_env()
+credentials = ClientCredentials.from_env()
 # Or explicitly:
-# credentials = ApiKeyCredentials(
+# credentials = ClientCredentials(
 #     org_id="my-org",
-#     api_key="key_abc123",
-#     api_secret="secret_xyz"
+#     client_id="key_abc123",
+#     client_secret="secret_xyz"
 # )
 
 # Create a client
@@ -44,12 +44,12 @@ model = version.get_metadata("model")  # e.g., "gpt-4"
 
 ### Environment Variables
 
-The SDK can load credentials from environment variables via `ApiKeyCredentials.from_env()`:
+The SDK can load credentials from environment variables via `ClientCredentials.from_env()`:
 
 ```bash
 export SCOPE_ORG_ID="my-org"
-export SCOPE_API_KEY="key_abc123"
-export SCOPE_API_SECRET="secret_xyz"
+export SCOPE_CLIENT_ID="key_abc123"
+export SCOPE_CLIENT_SECRET="secret_xyz"
 export SCOPE_API_URL="https://api.scope.io"
 export SCOPE_AUTH_API_URL="https://auth.scope.io"
 export SCOPE_ENVIRONMENT="production"              # Optional
@@ -59,13 +59,13 @@ export SCOPE_TOKEN_REFRESH_BUFFER="60"             # Optional
 ### Programmatic Configuration
 
 ```python
-from scope_client import ScopeClient, ApiKeyCredentials, Configuration
+from scope_client import ScopeClient, ClientCredentials, Configuration
 
 # Create credentials
-credentials = ApiKeyCredentials(
+credentials = ClientCredentials(
     org_id="my-org",
-    api_key="key_abc123",
-    api_secret="secret_xyz"
+    client_id="key_abc123",
+    client_secret="secret_xyz"
 )
 
 # Option 1: Pass credentials directly to client
@@ -86,7 +86,7 @@ client = ScopeClient(config=config)
 import scope_client
 
 scope_client.configure(
-    credentials=ApiKeyCredentials.from_env(),
+    credentials=ClientCredentials.from_env(),
     cache_enabled=True,
     cache_ttl=600
 )
@@ -119,9 +119,9 @@ client = scope_client.client()
 All prompt methods accept either a prompt ID (e.g., `prompt_01HXYZ...`) or a prompt name. The API auto-detects: if the value starts with `prompt_` and is a valid ULID, it's treated as an ID; otherwise, it's treated as a name.
 
 ```python
-from scope_client import ScopeClient, ApiKeyCredentials
+from scope_client import ScopeClient, ClientCredentials
 
-credentials = ApiKeyCredentials.from_env()
+credentials = ClientCredentials.from_env()
 client = ScopeClient(credentials=credentials)
 
 # Get a prompt version (defaults to production)
@@ -212,7 +212,7 @@ try:
     version = client.get_prompt_version("my-prompt")
     rendered = version.render(name="Alice")
 except InvalidCredentialsError:
-    print("Invalid credentials (org_id, api_key, or api_secret)")
+    print("Invalid credentials (org_id, client_id, or client_secret)")
 except TokenRefreshError:
     print("Failed to refresh JWT token")
 except AuthenticationError:
@@ -255,9 +255,9 @@ Telemetry.on_error(log_error)
 The client can be used as a context manager for automatic cleanup:
 
 ```python
-from scope_client import ScopeClient, ApiKeyCredentials
+from scope_client import ScopeClient, ClientCredentials
 
-credentials = ApiKeyCredentials.from_env()
+credentials = ClientCredentials.from_env()
 with ScopeClient(credentials=credentials) as client:
     version = client.get_prompt_version("my-prompt")
     # Connection is automatically closed when exiting the context
@@ -280,7 +280,7 @@ with ScopeClient(credentials=credentials) as client:
 | `ConnectionError` | Network connection failure |
 | `TimeoutError` | Request timeout |
 | `TokenRefreshError` | JWT token refresh failed |
-| `InvalidCredentialsError` | Invalid org_id, api_key, or api_secret |
+| `InvalidCredentialsError` | Invalid org_id, client_id, or client_secret |
 | `ResourceError` | Base class for resource errors |
 | `ValidationError` | Validation failure |
 | `RenderError` | Template rendering failure |

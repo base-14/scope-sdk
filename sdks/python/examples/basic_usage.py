@@ -9,22 +9,22 @@ This example demonstrates the basic functionality of the SDK including:
 
 Before running this example, set your environment variables:
     export SCOPE_ORG_ID="your-org-id"
-    export SCOPE_API_KEY="your-api-key"
-    export SCOPE_API_SECRET="your-api-secret"
+    export SCOPE_CLIENT_ID="your-client-id"
+    export SCOPE_CLIENT_SECRET="your-client-secret"
 
 Or modify the script to include your credentials directly.
 """
 
 import scope_client
-from scope_client import ApiKeyCredentials, Telemetry, RequestInfo, ResponseInfo
+from scope_client import ClientCredentials, RequestInfo, ResponseInfo, Telemetry
 
 
 def main() -> None:
     # Configure the SDK using credentials from environment
     try:
-        credentials = ApiKeyCredentials.from_env()
+        credentials = ClientCredentials.from_env()
     except scope_client.ConfigurationError:
-        print("Please set SCOPE_ORG_ID, SCOPE_API_KEY, and SCOPE_API_SECRET environment variables")
+        print("Please set SCOPE_ORG_ID, SCOPE_CLIENT_ID, and SCOPE_CLIENT_SECRET environment variables")
         return
 
     scope_client.configure(

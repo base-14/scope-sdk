@@ -4,15 +4,15 @@ A Python SDK for the Scope Platform, providing
 easy access to prompts, versions, and template rendering.
 
 Example:
-    >>> from scope_client import ScopeClient, ApiKeyCredentials
+    >>> from scope_client import ScopeClient, ClientCredentials
     >>>
     >>> # Create credentials from environment variables
-    >>> credentials = ApiKeyCredentials.from_env()
+    >>> credentials = ClientCredentials.from_env()
     >>> # Or explicitly:
-    >>> # credentials = ApiKeyCredentials(
+    >>> # credentials = ClientCredentials(
     >>> #     org_id="my-org",
-    >>> #     api_key="key_abc123",
-    >>> #     api_secret="secret_xyz"
+    >>> #     client_id="key_abc123",
+    >>> #     client_secret="secret_xyz"
     >>> # )
     >>>
     >>> # Create a client
@@ -26,8 +26,8 @@ Example:
 
 Environment Variables:
     SCOPE_ORG_ID: Organization identifier.
-    SCOPE_API_KEY: API key ID for authentication.
-    SCOPE_API_SECRET: API key secret for authentication.
+    SCOPE_CLIENT_ID: Client ID for authentication (legacy: SCOPE_API_KEY).
+    SCOPE_CLIENT_SECRET: Client secret for authentication (legacy: SCOPE_API_SECRET).
     SCOPE_API_URL: Base URL for the API (default: https://api.scope.io).
     SCOPE_AUTH_API_URL: Auth API URL (default: https://auth.scope.io).
     SCOPE_ENVIRONMENT: Environment name (default: production).
@@ -48,7 +48,12 @@ from scope_client._telemetry import (
 from scope_client._version import VERSION, __version__
 from scope_client.client import ScopeClient
 from scope_client.configuration import Configuration, ConfigurationManager
-from scope_client.credentials import ApiKeyCredentials, Credentials, CredentialsProtocol
+from scope_client.credentials import (
+    ApiKeyCredentials,
+    ClientCredentials,
+    Credentials,
+    CredentialsProtocol,
+)
 from scope_client.errors import (
     ApiError,
     AuthenticationError,
@@ -83,6 +88,7 @@ __all__ = [
     "ScopeClient",
     "Configuration",
     # Credentials
+    "ClientCredentials",
     "ApiKeyCredentials",
     "Credentials",
     "CredentialsProtocol",
@@ -154,17 +160,17 @@ def configure(
 
     Example:
         >>> import scope_client
-        >>> from scope_client import ApiKeyCredentials
+        >>> from scope_client import ClientCredentials
         >>>
         >>> # Configure with credentials from environment
-        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
+        >>> scope_client.configure(credentials=ClientCredentials.from_env())
         >>>
         >>> # Or with explicit credentials
         >>> scope_client.configure(
-        ...     credentials=ApiKeyCredentials(
+        ...     credentials=ClientCredentials(
         ...         org_id="my-org",
-        ...         api_key="key_abc123",
-        ...         api_secret="secret_xyz"
+        ...         client_id="key_abc123",
+        ...         client_secret="secret_xyz"
         ...     ),
         ...     cache_enabled=True,
         ...     cache_ttl=600
@@ -195,14 +201,14 @@ def client(
 
     Example:
         >>> import scope_client
-        >>> from scope_client import ApiKeyCredentials
+        >>> from scope_client import ClientCredentials
         >>>
         >>> # Using credentials directly
-        >>> credentials = ApiKeyCredentials.from_env()
+        >>> credentials = ClientCredentials.from_env()
         >>> client = scope_client.client(credentials=credentials)
         >>>
         >>> # Using global configuration
-        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
+        >>> scope_client.configure(credentials=ClientCredentials.from_env())
         >>> client = scope_client.client()
         >>>
         >>> # Or with per-client options
@@ -219,8 +225,8 @@ def configuration() -> Configuration:
 
     Example:
         >>> import scope_client
-        >>> from scope_client import ApiKeyCredentials
-        >>> scope_client.configure(credentials=ApiKeyCredentials.from_env())
+        >>> from scope_client import ClientCredentials
+        >>> scope_client.configure(credentials=ClientCredentials.from_env())
         >>> config = scope_client.configuration()
         >>> print(config.base_url)
         'https://api.scope.io'

@@ -6,8 +6,8 @@ RSpec.describe ScopeClient::TokenManager do
   let(:credentials) do
     ScopeClient::Credentials::ApiKey.new(
       org_id: 'test_org',
-      api_key: 'test_key',
-      api_secret: 'test_secret'
+      client_id: 'test_key',
+      client_secret: 'test_secret'
     )
   end
 
@@ -22,9 +22,9 @@ RSpec.describe ScopeClient::TokenManager do
   describe '#access_token' do
     context 'when no token is cached' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .with(
-            body: { account_id: 'test_org', key_id: 'test_key', key_secret: 'test_secret' }.to_json
+            body: { account_id: 'test_org', client_id: 'test_key', client_secret: 'test_secret' }.to_json
           )
           .to_return(
             status: 200,
@@ -41,13 +41,13 @@ RSpec.describe ScopeClient::TokenManager do
         token_manager.access_token
         token_manager.access_token
 
-        expect(WebMock).to have_requested(:post, 'https://auth.scope.io/v1/auth/sdk-token').once
+        expect(WebMock).to have_requested(:post, 'https://auth.scope.io/v1/auth/applications/login').once
       end
     end
 
     context 'when token is expired' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .to_return(
             status: 200,
             body: { access_token: 'new_token', expires_in: 1 }.to_json,
@@ -66,13 +66,13 @@ RSpec.describe ScopeClient::TokenManager do
         # Second call should refresh
         token_manager.access_token
 
-        expect(WebMock).to have_requested(:post, 'https://auth.scope.io/v1/auth/sdk-token').twice
+        expect(WebMock).to have_requested(:post, 'https://auth.scope.io/v1/auth/applications/login').twice
       end
     end
 
     context 'when auth API returns 401' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .to_return(status: 401, body: { message: 'Invalid credentials' }.to_json)
       end
 
@@ -83,7 +83,7 @@ RSpec.describe ScopeClient::TokenManager do
 
     context 'when auth API returns 403' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .to_return(status: 403, body: { message: 'Not authorized' }.to_json)
       end
 
@@ -94,7 +94,7 @@ RSpec.describe ScopeClient::TokenManager do
 
     context 'when auth API returns 500' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .to_return(status: 500, body: { message: 'Server error' }.to_json)
       end
 
@@ -105,7 +105,7 @@ RSpec.describe ScopeClient::TokenManager do
 
     context 'when connection fails' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .to_raise(Faraday::ConnectionFailed.new('Connection refused'))
       end
 
@@ -117,7 +117,7 @@ RSpec.describe ScopeClient::TokenManager do
 
     context 'when request times out' do
       before do
-        stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+        stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
           .to_raise(Faraday::TimeoutError.new('Timeout'))
       end
 

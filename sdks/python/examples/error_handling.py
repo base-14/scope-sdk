@@ -6,13 +6,13 @@ when using the SDK.
 
 Before running this example, set your environment variables:
     export SCOPE_ORG_ID="your-org-id"
-    export SCOPE_API_KEY="your-api-key"
-    export SCOPE_API_SECRET="your-api-secret"
+    export SCOPE_CLIENT_ID="your-client-id"
+    export SCOPE_CLIENT_SECRET="your-client-secret"
 """
 
 import scope_client
 from scope_client import (
-    ApiKeyCredentials,
+    ClientCredentials,
     AuthenticationError,
     AuthorizationError,
     ConfigurationError,
@@ -45,7 +45,7 @@ def demonstrate_error_handling() -> None:
 
     # Now configure properly for remaining examples
     try:
-        credentials = ApiKeyCredentials.from_env()
+        credentials = ClientCredentials.from_env()
         scope_client.configure(credentials=credentials)
         client = scope_client.client()
     except ConfigurationError:

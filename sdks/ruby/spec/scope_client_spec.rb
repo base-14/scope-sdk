@@ -5,15 +5,15 @@ RSpec.describe ScopeClient do
     it 'yields the configuration' do
       credentials = ScopeClient::Credentials::ApiKey.new(
         org_id: 'test_org',
-        api_key: 'custom_key',
-        api_secret: 'custom_secret'
+        client_id: 'custom_key',
+        client_secret: 'custom_secret'
       )
       described_class.configure do |config|
         config.credentials = credentials
         config.timeout = 60
       end
 
-      expect(described_class.configuration.credentials.api_key).to eq('custom_key')
+      expect(described_class.configuration.credentials.client_id).to eq('custom_key')
       expect(described_class.configuration.timeout).to eq(60)
     end
   end

@@ -94,8 +94,8 @@ class TestConfiguration:
         data = config.to_dict()
 
         assert isinstance(data, dict)
-        assert data["credentials"]["api_key"] == credentials.api_key
-        assert data["credentials"]["api_secret"] == "[REDACTED]"
+        assert data["credentials"]["client_id"] == credentials.client_id
+        assert data["credentials"]["client_secret"] == "[REDACTED]"
         assert data["timeout"] == 60
         assert "base_url" in data
         assert "cache_enabled" in data
@@ -126,13 +126,13 @@ class TestConfiguration:
 
     def test_validate_with_incomplete_credentials(self):
         """Test validation fails with incomplete credentials."""
-        credentials = ApiKeyCredentials(org_id="test_org")  # Missing api_key and api_secret
+        credentials = ApiKeyCredentials(org_id="test_org")  # Missing client_id and client_secret
         config = Configuration(
             credentials=credentials,
             base_url="https://api.scope.io",
             auth_api_url="https://auth.scope.io",
         )
-        with pytest.raises(ConfigurationError, match="api_key is required"):
+        with pytest.raises(ConfigurationError, match="client_id is required"):
             config.validate()
 
     def test_validate_without_base_url(self, credentials: ApiKeyCredentials):

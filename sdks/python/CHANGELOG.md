@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-04-24
+
+### Changed
+
+- **BREAKING (with backward compat):** Renamed `ApiKeyCredentials` to `ClientCredentials`.
+  `ApiKeyCredentials` is kept as an alias.
+- Renamed credential fields `api_key`/`api_secret` to `client_id`/`client_secret`.
+  Old parameter names still work but emit `DeprecationWarning`.
+- Renamed environment variables `SCOPE_API_KEY`/`SCOPE_API_SECRET` to
+  `SCOPE_CLIENT_ID`/`SCOPE_CLIENT_SECRET`. Old env vars still work with deprecation warnings.
+- Auth endpoint changed from `/v1/auth/sdk-token` to `/v1/auth/applications/login`.
+- `auth_type` property now returns `"client_credentials"` instead of `"api_key"`.
+- `to_dict()` now uses `client_id`/`client_secret` keys.
+- `MissingApiKeyError` message updated to reference new env var names.
+
 ## [0.1.0] - 2024-01-01
 
 ### Added
@@ -47,5 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `httpx>=0.24.0,<1.0.0` - HTTP client
 
-[Unreleased]: https://github.com/scope-io/scope-sdk/compare/python-v0.1.0...HEAD
+[Unreleased]: https://github.com/scope-io/scope-sdk/compare/python-v0.2.0...HEAD
+[0.2.0]: https://github.com/scope-io/scope-sdk/compare/python-v0.1.0...python-v0.2.0
 [0.1.0]: https://github.com/scope-io/scope-sdk/releases/tag/python-v0.1.0
