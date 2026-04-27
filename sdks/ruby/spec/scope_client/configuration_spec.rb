@@ -39,8 +39,8 @@ RSpec.describe ScopeClient::Configuration do
     it 'accepts credentials option' do
       credentials = ScopeClient::Credentials::ApiKey.new(
         org_id: 'test_org',
-        api_key: 'test_key',
-        api_secret: 'test_secret'
+        client_id: 'test_key',
+        client_secret: 'test_secret'
       )
       custom_config = described_class.new(credentials: credentials)
 
@@ -82,15 +82,15 @@ RSpec.describe ScopeClient::Configuration do
     it 'includes credentials as hash when present' do
       credentials = ScopeClient::Credentials::ApiKey.new(
         org_id: 'test_org',
-        api_key: 'test_key',
-        api_secret: 'test_secret'
+        client_id: 'test_key',
+        client_secret: 'test_secret'
       )
       config_with_creds = described_class.new(credentials: credentials)
       hash = config_with_creds.to_h
 
       expect(hash[:credentials]).to be_a(Hash)
       expect(hash[:credentials][:org_id]).to eq('test_org')
-      expect(hash[:credentials][:api_secret]).to eq('[REDACTED]')
+      expect(hash[:credentials][:client_secret]).to eq('[REDACTED]')
     end
   end
 
@@ -105,8 +105,8 @@ RSpec.describe ScopeClient::Configuration do
       it 'does not raise' do
         credentials = ScopeClient::Credentials::ApiKey.new(
           org_id: 'test_org',
-          api_key: 'test_key',
-          api_secret: 'test_secret'
+          client_id: 'test_key',
+          client_secret: 'test_secret'
         )
         valid_config = described_class.new(
           credentials: credentials,
@@ -122,8 +122,8 @@ RSpec.describe ScopeClient::Configuration do
       it 'raises ConfigurationError' do
         credentials = ScopeClient::Credentials::ApiKey.new(
           org_id: 'test_org',
-          api_key: 'test_key',
-          api_secret: 'test_secret'
+          client_id: 'test_key',
+          client_secret: 'test_secret'
         )
         invalid_config = described_class.new(
           credentials: credentials,
@@ -141,8 +141,8 @@ RSpec.describe ScopeClient::Configuration do
       it 'raises ConfigurationError' do
         credentials = ScopeClient::Credentials::ApiKey.new(
           org_id: 'test_org',
-          api_key: 'test_key',
-          api_secret: 'test_secret'
+          client_id: 'test_key',
+          client_secret: 'test_secret'
         )
         invalid_config = described_class.new(
           credentials: credentials,
@@ -160,8 +160,8 @@ RSpec.describe ScopeClient::Configuration do
       it 'raises ConfigurationError for missing org_id' do
         credentials = ScopeClient::Credentials::ApiKey.new(
           org_id: nil,
-          api_key: 'test_key',
-          api_secret: 'test_secret'
+          client_id: 'test_key',
+          client_secret: 'test_secret'
         )
         invalid_config = described_class.new(
           credentials: credentials,

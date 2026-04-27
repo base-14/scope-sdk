@@ -30,8 +30,8 @@ credentials = ScopeClient::Credentials::ApiKey.from_env
 # Or explicitly:
 # credentials = ScopeClient::Credentials::ApiKey.new(
 #   org_id: 'my-org',
-#   api_key: 'key_abc123',
-#   api_secret: 'secret_xyz'
+#   client_id: 'key_abc123',
+#   client_secret: 'secret_xyz'
 # )
 
 # Configure globally
@@ -59,8 +59,8 @@ model = version.get_metadata('model')  # e.g., 'gpt-4'
 The SDK can load credentials from environment variables via `Credentials::ApiKey.from_env`:
 
 - `SCOPE_ORG_ID` - Your organization identifier (required)
-- `SCOPE_API_KEY` - Your API key ID (required)
-- `SCOPE_API_SECRET` - Your API key secret (required)
+- `SCOPE_CLIENT_ID` - Your client ID (required, falls back to `SCOPE_API_KEY`)
+- `SCOPE_CLIENT_SECRET` - Your client secret (required, falls back to `SCOPE_API_SECRET`)
 - `SCOPE_API_URL` - API base URL (required)
 - `SCOPE_AUTH_API_URL` - Auth API URL for token exchange (required)
 - `SCOPE_ENVIRONMENT` - Environment name (optional)
@@ -72,8 +72,8 @@ The SDK can load credentials from environment variables via `Credentials::ApiKey
 # Create credentials
 credentials = ScopeClient::Credentials::ApiKey.new(
   org_id: 'my-org',
-  api_key: 'key_abc123',
-  api_secret: 'secret_xyz'
+  client_id: 'key_abc123',
+  client_secret: 'secret_xyz'
 )
 
 # Pass credentials via options
@@ -193,7 +193,7 @@ begin
   version = client.get_prompt_version('prompt-id')
   rendered = version.render(name: 'Alice')
 rescue ScopeClient::InvalidCredentialsError
-  # Invalid org_id, api_key, or api_secret
+  # Invalid org_id, client_id, or client_secret
 rescue ScopeClient::TokenRefreshError
   # Failed to refresh JWT token
 rescue ScopeClient::AuthenticationError

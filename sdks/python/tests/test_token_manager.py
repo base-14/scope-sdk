@@ -17,8 +17,8 @@ def auth_credentials() -> ApiKeyCredentials:
     """Provide test credentials for auth tests."""
     return ApiKeyCredentials(
         org_id="test_org",
-        api_key="test_key",
-        api_secret="test_secret",
+        client_id="test_key",
+        client_secret="test_secret",
     )
 
 
@@ -143,7 +143,7 @@ class TestTokenManagerHTTP:
         """Test successful token fetch."""
         httpx_mock.add_response(
             method="POST",
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
             json={
                 "access_token": "jwt_token_123",
                 "expires_in": 3600,
@@ -163,7 +163,7 @@ class TestTokenManagerHTTP:
         """Test 401 response raises InvalidCredentialsError."""
         httpx_mock.add_response(
             method="POST",
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
             status_code=401,
             json={"message": "Invalid credentials"},
         )
@@ -179,7 +179,7 @@ class TestTokenManagerHTTP:
         """Test 403 response raises InvalidCredentialsError."""
         httpx_mock.add_response(
             method="POST",
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
             status_code=403,
             json={"message": "Not authorized"},
         )
@@ -195,7 +195,7 @@ class TestTokenManagerHTTP:
         """Test 500 response raises TokenRefreshError."""
         httpx_mock.add_response(
             method="POST",
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
             status_code=500,
             json={"message": "Server error"},
         )
@@ -209,7 +209,7 @@ class TestTokenManagerHTTP:
         """Test connection error raises TokenRefreshError."""
         httpx_mock.add_exception(
             httpx.ConnectError("Connection refused"),
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
         )
 
         token_manager = TokenManager(auth_config)
@@ -221,7 +221,7 @@ class TestTokenManagerHTTP:
         """Test timeout error raises TokenRefreshError."""
         httpx_mock.add_exception(
             httpx.TimeoutException("Request timed out"),
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
         )
 
         token_manager = TokenManager(auth_config)
@@ -233,7 +233,7 @@ class TestTokenManagerHTTP:
         """Test that fetch_token sends the correct request payload."""
         httpx_mock.add_response(
             method="POST",
-            url="https://auth.test.scope.io/v1/auth/sdk-token",
+            url="https://auth.test.scope.io/v1/auth/applications/login",
             json={"access_token": "token", "expires_in": 3600},
         )
 
@@ -248,5 +248,5 @@ class TestTokenManagerHTTP:
 
         body = json.loads(request.content)
         assert body["account_id"] == "test_org"
-        assert body["key_id"] == "test_key"
-        assert body["key_secret"] == "test_secret"
+        assert body["client_id"] == "test_key"
+        assert body["client_secret"] == "test_secret"

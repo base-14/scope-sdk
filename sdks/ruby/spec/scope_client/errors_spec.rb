@@ -62,8 +62,8 @@ RSpec.describe ScopeClient::Error do
     it 'has a descriptive message' do
       error = described_class.new
 
-      expect(error.message).to include('API key is required')
-      expect(error.message).to include('SCOPE_API_KEY')
+      expect(error.message).to include('Client ID is required')
+      expect(error.message).to include('SCOPE_CLIENT_ID')
     end
 
     it 'inherits from ConfigurationError' do

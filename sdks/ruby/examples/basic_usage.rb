@@ -5,8 +5,8 @@
 #
 # Before running, set your environment variables:
 #   export SCOPE_ORG_ID=your_org_id
-#   export SCOPE_API_KEY=your_api_key
-#   export SCOPE_API_SECRET=your_api_secret
+#   export SCOPE_CLIENT_ID=your_client_id
+#   export SCOPE_CLIENT_SECRET=your_client_secret
 #   export SCOPE_API_URL=https://api.scope.io
 #   export SCOPE_AUTH_API_URL=https://auth.scope.io
 #
@@ -20,7 +20,7 @@ begin
   credentials = ScopeClient::Credentials::ApiKey.from_env
 rescue ScopeClient::ConfigurationError => e
   puts "Configuration error: #{e.message}"
-  puts 'Please set SCOPE_ORG_ID, SCOPE_API_KEY, SCOPE_API_SECRET, SCOPE_API_URL, and SCOPE_AUTH_API_URL'
+  puts 'Please set SCOPE_ORG_ID, SCOPE_CLIENT_ID, SCOPE_CLIENT_SECRET, SCOPE_API_URL, and SCOPE_AUTH_API_URL'
   exit 1
 end
 

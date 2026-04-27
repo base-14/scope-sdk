@@ -20,6 +20,8 @@ def reset_globals() -> Generator[None, None, None]:
         "SCOPE_ORG_ID",
         "SCOPE_API_KEY",
         "SCOPE_API_SECRET",
+        "SCOPE_CLIENT_ID",
+        "SCOPE_CLIENT_SECRET",
         "SCOPE_API_URL",
         "SCOPE_AUTH_API_URL",
         "SCOPE_ENVIRONMENT",
@@ -54,24 +56,37 @@ def org_id() -> str:
 
 
 @pytest.fixture
-def api_key() -> str:
-    """Provide a test API key."""
+def client_id() -> str:
+    """Provide a test client ID."""
     return "sk_test_123456789"
 
 
 @pytest.fixture
-def api_secret() -> str:
-    """Provide a test API secret."""
+def client_secret() -> str:
+    """Provide a test client secret."""
     return "test_api_secret"
 
 
+# Backward-compatible aliases
 @pytest.fixture
-def credentials(org_id: str, api_key: str, api_secret: str) -> ApiKeyCredentials:
+def api_key(client_id: str) -> str:
+    """Provide a test API key (alias for client_id)."""
+    return client_id
+
+
+@pytest.fixture
+def api_secret(client_secret: str) -> str:
+    """Provide a test API secret (alias for client_secret)."""
+    return client_secret
+
+
+@pytest.fixture
+def credentials(org_id: str, client_id: str, client_secret: str) -> ApiKeyCredentials:
     """Provide test credentials."""
     return ApiKeyCredentials(
         org_id=org_id,
-        api_key=api_key,
-        api_secret=api_secret,
+        client_id=client_id,
+        client_secret=client_secret,
     )
 
 
@@ -155,8 +170,6 @@ def mock_token_response() -> dict[str, Any]:
         "access_token": "test_jwt_token_abc123",
         "expires_in": 3600,
         "token_type": "Bearer",
-        "client_type": "sdk",
-        "environment": "production",
     }
 
 

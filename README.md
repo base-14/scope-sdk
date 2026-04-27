@@ -93,26 +93,28 @@ temperature = version.get_metadata('temperature', 0.7)  # with default
 
 ## Authentication
 
-All SDKs use JWT-based authentication with an extensible credentials system. The primary authentication method uses API key credentials.
+All SDKs use JWT-based authentication with an extensible credentials system. The primary authentication method uses client credentials.
 
 ### Credentials
 
 Authentication requires three values:
 
 1. **Organization ID** (`SCOPE_ORG_ID`): Your organization identifier
-2. **API Key** (`SCOPE_API_KEY`): Your API key ID
-3. **API Secret** (`SCOPE_API_SECRET`): Your API key secret
+2. **Client ID** (`SCOPE_CLIENT_ID`): Your application client ID
+3. **Client Secret** (`SCOPE_CLIENT_SECRET`): Your application client secret
 
-These can be loaded from environment variables using `ApiKeyCredentials.from_env()` (Python) or `Credentials::ApiKey.from_env` (Ruby), or passed directly when creating credentials.
+These can be loaded from environment variables using `ClientCredentials.from_env()` (Python) or `Credentials::ApiKey.from_env` (Ruby), or passed directly when creating credentials.
 
-Generate API keys from the Scope UI under Settings > Applications.
+Generate credentials from the Scope UI under Settings > Applications.
+
+> **Backward compatibility:** The old environment variable names (`SCOPE_API_KEY`, `SCOPE_API_SECRET`) and parameter names (`api_key`, `api_secret`) are still supported but deprecated.
 
 ### Environment Variables
 
 ```bash
 export SCOPE_ORG_ID="my-org"
-export SCOPE_API_KEY="key_abc123"
-export SCOPE_API_SECRET="secret_xyz"
+export SCOPE_CLIENT_ID="key_abc123"
+export SCOPE_CLIENT_SECRET="secret_xyz"
 export SCOPE_API_URL="https://api.scope.io"
 export SCOPE_AUTH_API_URL="https://auth.scope.io"
 ```

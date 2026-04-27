@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-04-24
+
+### Changed
+
+- **BREAKING**: Renamed credential fields from `api_key`/`api_secret` to `client_id`/`client_secret`
+- **BREAKING**: Auth type changed from `:api_key` to `:client_credentials`
+- **BREAKING**: Token endpoint changed from `/v1/auth/sdk-token` to `/v1/auth/applications/login`
+- Environment variables changed from `SCOPE_API_KEY`/`SCOPE_API_SECRET` to `SCOPE_CLIENT_ID`/`SCOPE_CLIENT_SECRET`
+- Old `api_key`/`api_secret` kwargs still accepted with deprecation warning
+- Old `SCOPE_API_KEY`/`SCOPE_API_SECRET` env vars still work as fallback with deprecation warning
+- Old `.api_key`/`.api_secret` accessor methods still work as aliases
+
 ## [0.1.0] - 2025-01-20
 
 ### Added
@@ -33,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ServerError` (5xx)
   - `MissingVariableError` for template rendering
   - `NoProductionVersionError` when no production version exists
-- Environment variable configuration (`SCOPE_API_KEY`, `SCOPE_API_URL`)
+- Environment variable configuration (`SCOPE_CLIENT_ID`, `SCOPE_API_URL`)
 - Full YARD documentation
 - RSpec test suite with WebMock
 

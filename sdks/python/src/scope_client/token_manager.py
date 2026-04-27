@@ -35,12 +35,12 @@ class TokenManager:
         config: Configuration instance with credentials.
 
     Example:
-        >>> from scope_client import ApiKeyCredentials
+        >>> from scope_client import ClientCredentials
         >>> from scope_client.configuration import Configuration
-        >>> credentials = ApiKeyCredentials(
+        >>> credentials = ClientCredentials(
         ...     org_id="my-org",
-        ...     api_key="key_abc123",
-        ...     api_secret="secret_xyz"
+        ...     client_id="key_abc123",
+        ...     client_secret="secret_xyz"
         ... )
         >>> config = Configuration(credentials=credentials)
         >>> token_manager = TokenManager(config)
@@ -85,7 +85,7 @@ class TokenManager:
             TokenRefreshError: If token fetch fails.
             InvalidCredentialsError: If credentials are invalid.
         """
-        url = f"{self._config.auth_api_url}/v1/auth/sdk-token"
+        url = f"{self._config.auth_api_url}/v1/auth/applications/login"
         credentials = self._config.credentials
         assert credentials is not None, "Credentials must be set before fetching token"
 
@@ -100,8 +100,8 @@ class TokenManager:
                     url,
                     json={
                         "account_id": credentials.org_id,
-                        "key_id": credentials.api_key,
-                        "key_secret": credentials.api_secret,
+                        "client_id": credentials.client_id,
+                        "client_secret": credentials.client_secret,
                     },
                     headers={
                         "Content-Type": "application/json",

@@ -27,7 +27,7 @@ module ScopeClient
 
   class MissingApiKeyError < ConfigurationError
     def initialize
-      super('API key is required. Set SCOPE_API_KEY or pass api_key to client.')
+      super('Client ID is required. Set SCOPE_CLIENT_ID (or SCOPE_API_KEY) or pass client_id to client.')
     end
   end
 

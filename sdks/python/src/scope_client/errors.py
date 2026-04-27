@@ -64,12 +64,13 @@ class ConfigurationError(ScopeError):
 
 
 class MissingApiKeyError(ConfigurationError):
-    """Raised when API key is not provided."""
+    """Raised when client credentials are not provided."""
 
     def __init__(self) -> None:
         super().__init__(
-            "API key is required. Set SCOPE_API_KEY environment variable "
-            "or pass api_key to configure()."
+            "Client credentials are required. Set SCOPE_CLIENT_ID and SCOPE_CLIENT_SECRET "
+            "environment variables or pass credentials to configure(). "
+            "(The old SCOPE_API_KEY/SCOPE_API_SECRET variables are also still supported.)"
         )
 
 

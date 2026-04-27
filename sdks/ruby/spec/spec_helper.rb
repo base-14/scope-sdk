@@ -34,8 +34,8 @@ RSpec.configure do |config|
     ScopeClient.reset_configuration!
     credentials = ScopeClient::Credentials::ApiKey.new(
       org_id: 'test_org',
-      api_key: 'test_api_key_12345',
-      api_secret: 'test_api_secret'
+      client_id: 'test_api_key_12345',
+      client_secret: 'test_api_secret'
     )
     ScopeClient.configure do |c|
       c.credentials = credentials
@@ -44,7 +44,7 @@ RSpec.configure do |config|
     end
 
     # Stub auth API token endpoint
-    stub_request(:post, 'https://auth.scope.io/v1/auth/sdk-token')
+    stub_request(:post, 'https://auth.scope.io/v1/auth/applications/login')
       .to_return(
         status: 200,
         body: {
